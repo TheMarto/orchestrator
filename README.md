@@ -1,2 +1,2 @@
 # orchestrator
-Orquestador interno para pequeña empresa en Nest
+Self-hosted orchestrator for small businesses
