@@ -1,0 +1,32 @@
+Plan de acción paso a paso:
+Fase 1: Infraestructura base (1-2 días)
+Server i7:
+
+Instalar Qdrant en container
+Preparar entorno Node.js para embeddings
+Probar conexión básica Qdrant
+
+Fase 2: Indexación de documentos (2-3 días)
+En el Server i7:
+
+Script de procesamiento simple para chunkar tus documentos
+Generar embeddings con all-MiniLM
+Indexar en Qdrant con metadata básica
+Probar búsqueda vectorial simple
+
+Fase 3: RAG básico (2-3 días)
+Script standalone primero:
+
+Query → embeddings → búsqueda → contexto
+Enviar prompt a tu Ollama (Server i5)
+Probar end-to-end con consultas reales
+
+Fase 4: NestJS API (2-3 días)
+Migrar a arquitectura formal:
+
+RAGService con todo el flujo
+API endpoints básicos
+Integración con tu BBDD existente
+
+Fase 5: Frontend/UX (1-2 días)
+Interfaz simple o integración con OpenWebUI

@@ -1,0 +1,67 @@
+-----------  DOCs ----------
+
+Responsabilidades por servicio:
+EmbeddingService
+
+Generar embeddings con all-MiniLM
+Caché de embeddings
+
+VectorService
+
+Cliente Qdrant
+CRUD de vectores
+Búsquedas por similitud
+
+DocumentService
+
+Leer archivos de texto
+Chunking inteligente
+Metadata extraction
+
+RAGService
+
+Orquestación completa
+Query → vectors → context → LLM → response
+
+Controllers
+
+DocumentsController: POST /documents/index
+ChatController: POST /chat/query
+
+Dependencies principales:
+
+@qdrant/js-client-rest (Qdrant)
+@xenova/transformers (embeddings locales)
+axios (Ollama HTTP client)
+class-validator + class-transformer (DTOs)
+
+ESTRUCTURA:
+rag-backend/
+├── src/
+│   ├── app.module.ts                 # Módulo principal
+│   ├── main.ts                       # Bootstrap
+│   │
+│   ├── controllers/
+│   │   ├── documents.controller.ts   # API para indexar docs
+│   │   └── chat.controller.ts        # API para queries RAG
+│   │
+│   ├── services/
+│   │   ├── embedding.service.ts      # Generar embeddings locales
+│   │   ├── vector.service.ts         # Cliente Qdrant
+│   │   ├── document.service.ts       # Procesar/chunking docs
+│   │   └── rag.service.ts            # Orquestación completa
+│   │
+│   ├── dto/
+│   │   ├── chat.dto.ts              # Validación requests chat
+│   │   └── document.dto.ts          # Validación upload docs
+│   │
+│   ├── interfaces/
+│   │   └── types.ts                 # Types/interfaces
+│   │
+│   └── utils/
+│       ├── chunking.util.ts         # Lógica de chunking
+│       └── ollama.util.ts           # Cliente Ollama
+│
+├── docs/                            # Carpeta para tus documentos
+├── package.json
+└── README.md
