@@ -1,0 +1,15 @@
+Librerias Instaladas:
+
+# Dependencias principales
+npm install @qdrant/js-client-rest @xenova/transformers axios class-validator class-transformer
+
+# Dependencias de desarrollo
+npm install -D @types/node
+
+# Verificar package.json después de instalar
+npm list --depth=0
+
+
+npm install uuid
+npm install -D @types/uuid
+
