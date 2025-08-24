@@ -17,6 +17,7 @@ exports.DocumentsController = void 0;
 const common_1 = require("@nestjs/common");
 const document_dto_1 = require("../../dto/document.dto");
 const document_service_1 = require("../../services/document/document.service");
+const ollama_util_1 = require("../../utils/ollama.util");
 let DocumentsController = DocumentsController_1 = class DocumentsController {
     documentService;
     logger = new common_1.Logger(DocumentsController_1.name);
@@ -158,6 +159,24 @@ let DocumentsController = DocumentsController_1 = class DocumentsController {
             };
         }
     }
+    async ollamaHealthCheck() {
+        try {
+            const health = await ollama_util_1.OllamaUtil.healthCheck();
+            return {
+                success: health.status === 'healthy',
+                message: health.status === 'healthy' ? 'Ollama connection is healthy' : 'Ollama connection failed',
+                data: health,
+            };
+        }
+        catch (error) {
+            this.logger.error('Ollama health check failed:', error);
+            return {
+                success: false,
+                message: 'Error checking Ollama health',
+                error: error.message,
+            };
+        }
+    }
 };
 exports.DocumentsController = DocumentsController;
 __decorate([
@@ -211,6 +230,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], DocumentsController.prototype, "healthCheck", null);
+__decorate([
+    (0, common_1.Get)('ollama-health'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], DocumentsController.prototype, "ollamaHealthCheck", null);
 exports.DocumentsController = DocumentsController = DocumentsController_1 = __decorate([
     (0, common_1.Controller)('documents'),
     __metadata("design:paramtypes", [document_service_1.DocumentService])

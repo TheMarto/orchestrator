@@ -2,6 +2,7 @@ import { OnModuleInit } from '@nestjs/common';
 export declare class EmbeddingService implements OnModuleInit {
     private readonly logger;
     private embedder;
+    private pipeline;
     private readonly config;
     onModuleInit(): Promise<void>;
     generateEmbedding(text: string): Promise<number[]>;

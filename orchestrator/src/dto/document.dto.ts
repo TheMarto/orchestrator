@@ -2,6 +2,7 @@
 import { IsString, IsNotEmpty, IsOptional, IsArray, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 
+
 export class IndexDocumentDto {
   @IsString()
   @IsNotEmpty()

@@ -9,10 +9,10 @@ var EmbeddingService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmbeddingService = void 0;
 const common_1 = require("@nestjs/common");
-const transformers_1 = require("@xenova/transformers");
 let EmbeddingService = EmbeddingService_1 = class EmbeddingService {
     logger = new common_1.Logger(EmbeddingService_1.name);
     embedder;
+    pipeline;
     config = {
         model: 'sentence-transformers/all-MiniLM-L6-v2',
         maxLength: 512,
@@ -20,7 +20,9 @@ let EmbeddingService = EmbeddingService_1 = class EmbeddingService {
     async onModuleInit() {
         try {
             this.logger.log('Loading embedding model...');
-            this.embedder = await (0, transformers_1.pipeline)('feature-extraction', this.config.model, {
+            const { pipeline } = await import('@xenova/transformers');
+            this.pipeline = pipeline;
+            this.embedder = await this.pipeline('feature-extraction', this.config.model, {
                 quantized: false,
             });
             this.logger.log('Embedding model loaded successfully');

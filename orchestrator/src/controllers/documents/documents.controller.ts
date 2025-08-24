@@ -2,6 +2,7 @@
 import { Controller, Post, Get, Delete, Body, Logger, HttpCode, HttpStatus } from '@nestjs/common';
 import { IndexDocumentDto, IndexFromFileDto, IndexMultipleDocumentsDto } from 'src/dto/document.dto';
 import { DocumentService } from 'src/services/document/document.service';
+import { OllamaUtil } from 'src/utils/ollama.util';
 
 @Controller('documents')
 export class DocumentsController {
@@ -189,6 +190,31 @@ export class DocumentsController {
       return {
         success: false,
         message: 'Document service is unhealthy',
+        error: error.message,
+      };
+    }
+  }
+
+
+  /**
+   * GET /documents/ollama-health
+   * Verificar conexión con Ollama
+   */
+  @Get('ollama-health')
+  async ollamaHealthCheck() {
+    try {
+      const health = await OllamaUtil.healthCheck();
+      
+      return {
+        success: health.status === 'healthy',
+        message: health.status === 'healthy' ? 'Ollama connection is healthy' : 'Ollama connection failed',
+        data: health,
+      };
+    } catch (error) {
+      this.logger.error('Ollama health check failed:', error);
+      return {
+        success: false,
+        message: 'Error checking Ollama health',
         error: error.message,
       };
     }

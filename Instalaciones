@@ -13,3 +13,22 @@ npm list --depth=0
 npm install uuid
 npm install -D @types/uuid
 
+
+
+
+Flujo de trabajo típico:
+
+Indexación: POST /documents/index → DocumentService → EmbeddingService → VectorService
+Query RAG: POST /chat/query → RAGService → VectorService + Ollama → respuesta
+
+
+
+EJEMPLO:
+1. Primera consulta RAG completa:
+cmdcurl -X POST "http://localhost:3000/chat/query" -H "Content-Type: application/json" -d "{\"query\": \"¿Qué es NestJS?\"}"
+2. Buscar sobre Ollama:
+cmdcurl -X POST "http://localhost:3000/chat/search" -H "Content-Type: application/json" -d "{\"query\": \"Ollama servidor local\"}"
+3. Consulta más específica:
+cmdcurl -X POST "http://localhost:3000/chat/query" -H "Content-Type: application/json" -d "{\"query\": \"¿Cómo funciona RAG?\"}"
+4. Estadísticas completas:
+cmdcurl http://localhost:3000/chat/stats

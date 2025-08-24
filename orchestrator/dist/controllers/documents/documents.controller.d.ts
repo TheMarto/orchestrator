@@ -125,4 +125,20 @@ export declare class DocumentsController {
         error: any;
         data?: undefined;
     }>;
+    ollamaHealthCheck(): Promise<{
+        success: boolean;
+        message: string;
+        data: {
+            status: "healthy" | "unhealthy";
+            version?: string;
+            models?: string[];
+            error?: string;
+        };
+        error?: undefined;
+    } | {
+        success: boolean;
+        message: string;
+        error: any;
+        data?: undefined;
+    }>;
 }

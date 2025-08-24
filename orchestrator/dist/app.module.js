@@ -14,6 +14,8 @@ const vector_service_1 = require("./services/vector/vector.service");
 const document_service_1 = require("./services/document/document.service");
 const embedding_service_1 = require("./services/embedding/embedding.service");
 const documents_controller_1 = require("./controllers/documents/documents.controller");
+const chat_controller_1 = require("./controllers/chat/chat.controller");
+const rag_service_1 = require("./services/rag/rag.service");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -22,13 +24,15 @@ exports.AppModule = AppModule = __decorate([
         imports: [],
         controllers: [
             app_controller_1.AppController,
-            documents_controller_1.DocumentsController
+            documents_controller_1.DocumentsController,
+            chat_controller_1.ChatController
         ],
         providers: [
             app_service_1.AppService,
             embedding_service_1.EmbeddingService,
             vector_service_1.VectorService,
             document_service_1.DocumentService,
+            rag_service_1.RagService
         ],
     })
 ], AppModule);

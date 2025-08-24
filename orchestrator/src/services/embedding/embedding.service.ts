@@ -1,18 +1,12 @@
+// src/services/embedding.service.ts
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { pipeline, FeatureExtractionPipeline, Pipeline } from '@xenova/transformers';
 import { EmbeddingConfig } from 'src/interfaces/types';
-
 
 @Injectable()
 export class EmbeddingService implements OnModuleInit {
-
-
-
-
-
-
-private readonly logger = new Logger(EmbeddingService.name);
-  private embedder: any; // Usar any para evitar problemas de tipos con la librería
+  private readonly logger = new Logger(EmbeddingService.name);
+  private embedder: any;
+  private pipeline: any; // Para dynamic import
   
   private readonly config: EmbeddingConfig = {
     model: 'sentence-transformers/all-MiniLM-L6-v2',
@@ -22,11 +16,16 @@ private readonly logger = new Logger(EmbeddingService.name);
   async onModuleInit() {
     try {
       this.logger.log('Loading embedding model...');
-      this.embedder = await pipeline(
+      
+      // Dynamic import para módulos ESM
+      const { pipeline } = await import('@xenova/transformers');
+      this.pipeline = pipeline;
+      
+      this.embedder = await this.pipeline(
         'feature-extraction',
         this.config.model,
         { 
-          quantized: false,  // Mejor calidad, más lento
+          quantized: false,
         }
       );
       this.logger.log('Embedding model loaded successfully');
@@ -50,7 +49,6 @@ private readonly logger = new Logger(EmbeddingService.name);
       });
 
       // Extraer el array de números del tensor
-      // Acceder a los datos del tensor de manera segura
       let embedding: number[];
       
       if (output && typeof output === 'object' && 'data' in output) {
@@ -103,5 +101,4 @@ private readonly logger = new Logger(EmbeddingService.name);
       dimension: this.getEmbeddingDimension(),
     };
   }
-
 }
