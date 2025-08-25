@@ -23,7 +23,7 @@ let RagService = RagService_1 = class RagService {
         this.embeddingService = embeddingService;
         this.vectorService = vectorService;
     }
-    async processQuery(query, maxResults = 5, minScore = 0.7, model) {
+    async processQuery(query, maxResults = 5, minScore = 0.3, model) {
         const startTime = Date.now();
         try {
             this.logger.log(`Processing RAG query: "${query.substring(0, 50)}..."`);
@@ -85,7 +85,7 @@ FORMATO DE RESPUESTA:
 - Menciona las fuentes cuando sea relevante
 - Si usas información de múltiples documentos, organiza la respuesta de forma coherente`;
     }
-    async searchDocuments(query, maxResults = 5, minScore = 0.7) {
+    async searchDocuments(query, maxResults = 5, minScore = 0.3) {
         try {
             this.logger.log(`Searching documents for: "${query.substring(0, 50)}..."`);
             const queryEmbedding = await this.embeddingService.generateEmbedding(query);

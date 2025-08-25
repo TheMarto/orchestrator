@@ -32,3 +32,18 @@ cmdcurl -X POST "http://localhost:3000/chat/search" -H "Content-Type: applicatio
 cmdcurl -X POST "http://localhost:3000/chat/query" -H "Content-Type: application/json" -d "{\"query\": \"¿Cómo funciona RAG?\"}"
 4. Estadísticas completas:
 cmdcurl http://localhost:3000/chat/stats
+
+
+
+######### Cuendo Da problemas #########
+# Desinstalar sharp actual
+npm uninstall sharp
+# Reinstalar para macOS
+npm install --platform=darwin --arch=x64 sharp
+# Más agresivo
+npm install --ignore-scripts=false --foreground-scripts --verbose sharp
+# Limpiar todo y reinstalar
+rm -rf node_modules package-lock.json
+npm install
+# Forzar rebuild de módulos nativos
+npm rebuild

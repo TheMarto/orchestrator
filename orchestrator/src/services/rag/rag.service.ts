@@ -13,7 +13,7 @@ export class RagService {
 
 
 
-    private readonly logger = new Logger(RagService.name);
+  private readonly logger = new Logger(RagService.name);
 
   constructor(
     private readonly embeddingService: EmbeddingService,
@@ -26,7 +26,7 @@ export class RagService {
   async processQuery(
     query: string,
     maxResults: number = 5,
-    minScore: number = 0.7,
+    minScore: number = 0.3, // Cambiar default aquí también
     model?: string,
   ): Promise<ChatResponse> {
     const startTime = Date.now();
@@ -131,7 +131,7 @@ FORMATO DE RESPUESTA:
   async searchDocuments(
     query: string,
     maxResults: number = 5,
-    minScore: number = 0.7,
+    minScore: number = 0.3, // Consistente con processQuery
   ): Promise<VectorSearchResult[]> {
     try {
       this.logger.log(`Searching documents for: "${query.substring(0, 50)}..."`);
