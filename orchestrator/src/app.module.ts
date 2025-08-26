@@ -7,13 +7,15 @@ import { EmbeddingService } from './services/embedding/embedding.service';
 import { DocumentsController } from './controllers/documents/documents.controller';
 import { ChatController } from './controllers/chat/chat.controller';
 import { RagService } from './services/rag/rag.service';
+import { OllamaProxyController } from './controllers/ollama-proxy/ollama-proxy.controller';
 
 @Module({
   imports: [],
   controllers: [
     AppController,
     DocumentsController,
-    ChatController
+    ChatController,
+    OllamaProxyController
   ],
   providers: [
     AppService,

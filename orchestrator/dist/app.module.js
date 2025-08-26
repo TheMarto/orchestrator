@@ -16,6 +16,7 @@ const embedding_service_1 = require("./services/embedding/embedding.service");
 const documents_controller_1 = require("./controllers/documents/documents.controller");
 const chat_controller_1 = require("./controllers/chat/chat.controller");
 const rag_service_1 = require("./services/rag/rag.service");
+const ollama_proxy_controller_1 = require("./controllers/ollama-proxy/ollama-proxy.controller");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -25,7 +26,8 @@ exports.AppModule = AppModule = __decorate([
         controllers: [
             app_controller_1.AppController,
             documents_controller_1.DocumentsController,
-            chat_controller_1.ChatController
+            chat_controller_1.ChatController,
+            ollama_proxy_controller_1.OllamaProxyController
         ],
         providers: [
             app_service_1.AppService,

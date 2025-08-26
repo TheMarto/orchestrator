@@ -1,1 +1,2530 @@
-NestJS es un framework progresivo para Node.js que utiliza TypeScript.
+OsTicket es un sistema de ticket  Para interno de la empresa
+
+
+Post-Install Setup Guide
+Once osTicket has been installed you need to further configure it via admin panel before it is fully usable. Only staff with admin’s privileges can access the admin panel. Please use the username and password created during the install process.
+
+Email Setup
+Setting up your system to accept emails varies from system to system and your personal preference. osTicket allows you to route unlimited number of emails as incoming tickets. For detailed instruction please see Email Settings Guide.
+
+Help Topics
+In addition to emails, clients/users can also use an online form to create tickets. Help topics helps maps online inquiries to a department and assigns priority without the need for the user to select a department or/and ticket priority. This gives you ability to route inquiries without exposing internal departments.
+
+Departments
+Departments are used to categorize incoming tickets and also as access mask for staff members. For example you can restrict staff’s tickets access based on departments. To manage departments go to the Departments tab in the Admin Panel.
+
+Staff Members
+osTicket allows you to add unlimited number of representatives to the system. Each staff member is assigned to a group and a department which determines the level of permission. Every staff account can be of type ‘Admin’ or ‘Staff’.
+
+System Preferences
+To disable or change system settings, go to Settings Tab in Admin Panel.
+
+
+
+
+Email Settings
+osTicket allows you to setup unlimited number of email addresses to handle all your company’s mail accounts and email communication. Incoming emails are converted to support tickets allowing you to easily manage, organize and archive all emailed support requests in one place.
+
+Email Templates
+osTicket ships with generic email templates used for auto-responses, alerts, notices and replies. Refer to Email Templates Guide for details on how to customize or add new templates.
+
+Routing Incoming Emails
+Setting up your system to accept emails varies from system to system and depends on your personal preference. osTicket currently supports piping (aliases) and POP3/IMAP polling methods for routing incoming emails. Tickets are routed to the department and assigned a default priority associated with the email.
+
+To enable incoming email fetching, in the Admin panel go to Settings and Email, and check the box for Email Fetching to enable it. It is disabled by default.
+
+EMAIL PIPING
+
+Piping method allows for real-time email handling. Extra setup is required at mail server level to pipe the raw email message to osTicket pipe handler. Both remote and local piping are supported. See Email Piping Guide.
+
+POP3/IMAP POLLING
+
+POP3/IMAP account polling method is best suited for individuals with remote mail account(s) and/or with limited access to mail delivery settings. Each email address added to the system can have an account associated to it. See POP3/IMAP Setting Guide.
+
+Outgoing Emails
+By default osTicket uses native PHP Mail function to send outgoing emails. However, this can be problematic to spam filters depending on your php.ini mail settings. It is highly recommended that you use SMTP instead.
+
+Each of the email accounts can have it’s own SMTP. You can also setup a default SMTP system wide. See Settings tab in admin panel.
+
+IMPORTANT NOTE REGARDING USE OF EXTERNAL SMTP SERVERS
+
+Some hosting companies (Hostgator.com, for example) do not allow the use of SMTP servers located on a separate server and will block all requests. Trying to connect to a blocked external SMTP server will result in a “login failure” message in OSTicket when trying to save the Outgoing Emails settings.
+
+If you have shell access with your hosting account you can manually test a connection to a remote SMTP server from the command line using telnet:
+
+telnet smtp.example.com 25
+A blocked connection will result in a message similar to the following:
+
+Trying 192.0.32.10...
+telnet: connect to address 192.0.32.10: Connection refused
+OUTGOING SMTP SPOOFING
+
+Check “Allow spoofing (No Overwrite)” in Settings => Email Settings
+
+Outlook Configuration
+
+Gmail Configuration
+
+In order to use Gmail, your host must support SSL, so osTicket can negotiate the secure connection, and you must enable IMAP or POP in your GMail or GApps account. Configure in osTicket (the easy part)
+
+Under Admin panel -> Emails -> Emails -> Sending email via SMTP For most people, enter either ssl://smtp.gmail.com with port 465 or tls://smtp.gmail.com with port 587.
+
+note: If you have a google apps/G-Suite account, this might change, see below.
+
+Select “Authentication Required”. Leave Header Spoofing unchecked. Make sure your username is your full email and password are set correctly in the Email Login Information
+
+If you test at this point and it doesn’t work, continue reading.
+
+You may need to consult your PHP error log (the location varies by OS and personal preferences so consult your php.ini to determine its location). The PHP error log often contains more information as to why something is not working correctly.
+
+Check your Firewall
+
+Connection Refused errors are most likely caused by your firewall.
+
+If you are running csf, it defaults to block outgoing SMTP connections. You can either turn off SMTP_BLOCK (not recommended) or add the user osTicket is running under to SMTP_ALLOWUSER. Also make sure the port you are using (465 or 587) is in SMTP_PORTS.
+
+If you are running some other firewall, make sure it is allowing outgoing connections on 465 or 587.
+
+note: if you are running SELinux please disable it to see if that makes this start working. If it does then SELinux is blocking the connection and you will need to re-enable it and write a rule to allow the connection.
+
+Check Gmail
+
+Not related to SMTP, but make sure you enabled IMAP or POP3 from Settings -> Forwarding and POP/IMAP
+
+To enable POP for your Gmail account.
+
+To enable IMAP for your Gmail account.
+
+You may need to “allow less secure apps”. From gmail, click your avatar at the top right of the page and click “My Account”. In the left menu, under Sign-In & Security, click “Connected Apps and Sites”. Scroll down to “Allow less secure apps” and turn it on and retest.
+
+It is recommended to not leave this on unless necessary.
+
+Check your G-Suite policies
+
+G-Suite allows you to use their SMTP Relay service. This service allows you to open up SMTP under certain conditions. To use this service, you must configure it under Apps -> G-Suite > Gmail > Advanced Settings -> General Settings -> Routing Add an SMTP relay service with the appropriate settings. Make sure you change your osTicket configuration to use smtp-relay.gmail.com as the SMTP server.
+
+See https://support.google.com/a/answer/2956491?hl=en for more information.
+
+POP3/IMAP Settings Guide
+If email piping is not a preferred option for you or if your hosting provider does not support it, you may use POP3/IMAP account polling instead. osTicket will poll an external POP3/IMAP account on a regular basis, retrieve email messages and convert them to tickets. It is best suited for individuals with remote mail account(s) and/or limited access to mail delivery settings.
+
+Enable mail fetch in Admin Panel => Settings => Email Settings
+Refer to your hosting manual or contact your hosting provider for host name and port number
+Configure fetch frequency for each of the accounts - 5 minutes recommended
+Enable Delete fetched message(s) - if your mail server doesn’t support auto-archiving on fetch
+Schedule Polling
+IMPORTANT: Simply checking Admin Panel => Settings => Email Settings => Enable POP/IMAP email fetch will not cause osTicket to automatically poll a mailbox for new messages. Account polling, unlike email piping, requires that a mail fetcher (script) be scheduled for repeated execution. Choose one of the methods below depending on your hosting environment.
+
+RECURRING TASKS SCHEDULER (CRON JOB)
+
+This is the most convenient method if your hosting provider allows scheduling recurring tasks via crontab on nix or “Scheduled Tasks” on a Windows server. Please refer to your hosting manual or contact your hosting provider for instructions. The PHP CLI executable is called to run cron.php.
+
+Add the following entry to cron file normally in /etc/crontab in nix systems and adjust: the time; the webuser; and paths accordingly.
+
+*/5 * * * * nobody /path/to/php /path/to/api/cron.php
+For windows users in “Scheduled Tasks” add "c:\php\bin\php.exe c:\website\osticket\api\cron.php"
+
+RECURRING TASKS SCHEDULER (HOST’S CUSTOM TASK SCHEDULER)
+
+Some hosts do not allow adding cron jobs, and instead only allow you to probe scripts located at a publicly accessible URL. In this case, you will schedule the task using your webhost’s scheduling interface and http://domain/path/to/osticket/api/cron.php.
+
+To prevent unauthorized execution of scripts from the outside, Settings => API has rules for allowing external access based on originating IP and an API “passphrase”, which is actually the User Agent string of the agent trying to access cron.php on your web server.
+
+If the User Agent string is not changed to the API key, the request will be denied, email will not be polled, and API error - code #77: Unknown remote host 181.222.32.12 or invalid API key [Mozilla/5.0 (X11; U; Linux x86_64; en-US) AppleWebKit/534.13 (KHTML, like Gecko) Chrome/9.0.597.84 Safari/534.13] will appear in your system logs under the osTicket dashboard.
+
+If your host allows you to modify their schedulers User Agent string, then change that to the API key and add your webhost scheduler’s IP to Settings => API => API Keys.
+
+EXTERNAL TRIGGERING USING WGET
+
+First add an API key and IP to Settings => API => API Keys.
+
+Enter the IP of the host that the wget will run from.
+Enter 3 separate words into the passphrase box (these are used in conjunction with the IP to generate hashes)
+Click submit
+A hash will be generated
+Then, setup a cron job to run wget */5 * * * * nobody wget -q -O /dev/null --user-agent=<API key here> http://<host & path goes here>/api/cron.php
+
+See forum post.
+
+AUTO CRON
+
+This is internal task manager triggered by staff’s activity, no external setup required! If enabled, emails are fetched based on activity of a logged in staff member at an interval set for each of the email accounts.
+
+Enable in Admin Panel => Emails => Settings and ensure Email Fetching Fetch on auto-cron is enabled.
+Please note that nothing happens if no one is logged in.
+It might slow the page load a little in some instances.
+Maximum of one cron call every 3 minutes per staff
+
+
+Email Piping
+The email piping is a technique of sending email message as an input to a program rather than appending the message to the mailbox file, allowing for real-time email delivery and handling. Every mail server has its own rules and procedures for mail delivery, making it hard to provide common instructions for configuring an MTA. You should refer to your hosting manual or contact your hosting provider for email piping instructions if none of the methods below works for you.
+
+osTicket supports both remote and local piping
+Email piping must be enabled in admin panel Note: This option appears to be removed from v1.7 - piping works without enabling.
+Local Piping
+Local piping refers to the case where osTicket is installed on a server also handling your emails. Most shared hosting users fall into this category.
+
+SETTING UP ALIASES IN CPANEL
+
+Add a forwarding rule for each of the email addresses to /path/to/api/pipe.php.
+
+For example forward support@domain.com to "|/path/to/api/pipe.php"
+
+CPANEL X INSTRUCTIONS
+
+CPANEL -> Email -> Forwarders -> Add Forwarder
+
+Address to a forwarder: @domain
+Advanced Options -> Pipe to a Program: public_html/osticket/api/pipe.php
+Click ‘Add Forwarder’ button
+When complete you will see:
+
+@domain to |/home//public_html/osticket/api/pipe.php
+
+assumption is you unpackaged osticket.tar in /home/USERNAME/public_html/
+Pipe to a Program path: if you have a leading ‘/’ cPanel will use the path you enter, if you do not have ‘/’ cPanel will create it relative to your home directory
+pipe.php should have hashbang at the top of the file: #!/usr/bin/php -q
+Make pipe.php executable chmod 755 pipe.php
+Enable email piping in admin panel Settings -> preference Note: This option appears to be removed from v1.7 - piping works without enabling.
+MAIL DELIVERY FAILED
+
+If you have the error: ‘Mail delivery failed: returning message to sender’ but the user’s email is still successfully processed.
+
+You have some options:
+
+1. Update php.ini
+
+/usr/local/lib/php.ini update: display_errors Off
+
+restart apache
+
+2. Update exim.conf
+
+Update /etc/exim.conf in the section:
+
+address_pipe:
+
+driver = pipe
+return_output
+virtual_address_pipe:
+
+driver = pipe
+group = "${lookup{$domain}lsearch* {/etc/userdomains}{$value}}"
+return_output
+user = "${lookup{$domain}lsearch* {/etc/userdomains}{$value}}"
+Change return_output to return_fail_output
+
+REASON: (from exim.conf comment)
+
+If the pipe generates any standard output, it is returned to the sender of the message as a delivery error. Set return_fail_output instead of return_output if you want this to happen only when the pipe fails to complete normally. You can set different transports for aliases and forwards if you want to - see the references to address_pipe below.
+
+SETTING UP ALIASES WITH QMAIL
+
+Create/Edit your .qmail-* for the domain you wish to forward and add a forwarding rule to /path/to/api/pipe.php. For example for support@domain.com .qmail-support file should contain |/path/to/api/pipe.php
+
+SETTING UP ALIASES FOR SENDMAIL
+
+Modify your aliases file by adding support: root, |/path/to/api/pipe.php and run newaliases.
+
+SETTING UP ALIASES IN .PROCMAILRC
+
+:0 c
+   * ^To.*support@domain.com
+   |/path/to/api/pipe.php
+Remote Piping
+
+Remote piping is useful when osTicket installation and the mail server are on two separate machines. To maintain logic in one place remote piping is done over HTTP post to osTicket’s API. osTicket ships with two scripts to help you accomplish this task; automail.php and automail.pl. Both accomplish the same task by posting to http://www.yourdomain.com/osticket/api/tickets.email (replace osticket with the folder name where you installed osticket)
+
+Remote host IP must be white listed in Admin Panel > Manage > API Keys
+Valid API key required
+Follow local piping instructions above to pipe emails to remote script which will in turn post to osTicket
+For technical details, please refer to API Docs.
+
+Upgrade and Migration
+Before embarking on an upgrade or a migration mission, it is extremely important that you backup your website’s database and files. We also recommend that you take the system offline momentarily during the process. While we try to ensure that the upgrade process is straightforward and painless, we can’t guarantee it will be the case for every user. For this reason it is crucial that users take precautions in case of any problems. If the thought of upgrading your installation gives you the shakes then feel free to contact us for help.
+
+
+Upgrade
+From time to time it will be necessary to upgrade your osTicket installation to the latest version, either to fix bugs or gain new features. Starting with version 1.6, osTicket is a complete rewrite with new database schema and code base making it hard to simply upgrade from previous versions.
+
+Only previous versions from version 1.6 RC1 can be upgraded to the current version.
+If your osTicket version is older than 1.6, you need to look into migration instead.
+
+Our objectives is to make upgrading from an earlier release as painless as possible going forward and support migration from discontinued versions. we are working with osTicket community on the best way to upgrade or/and import data from previous versions including 3rd party helpdesk systems.
+
+Uploading Files
+After you have successfully downloaded the osTicket package to your computer you will need to prepare the files to be uploaded to your web server, where the old version of osTicket is running - overwriting the existing files. This can be accomplished by decompressing the download and then using an FTP client to transfer files in upload directory/folder to your server, overwriting existing osTicket files. For user using control panels like CPanel or Plesk, you can utilize the systems file manager to upload the package to your server then simply extract the package while making sure the path hierarchy is maintained.
+
+Make sure you backup your site’s database and files PLEASE DO NOT SKIP
+Upgrader requires user with admin privileges
+It is recommended that you take the system offline during the upgrade
+Maintain the directory hierarchy to make sure files are overwritten
+Upload folder contains the osTicket files that need to be uploaded to your web server.
+Do not overwrite your ost-config.php file (in the include directory) or else you will lose your MySQL admin settings.
+Do not upload files in scripts folder. Only useful for remote piping
+For versions 1.6 RC1-RC2 Only: Once you’ve overwritten the files, rename config.php to ostconfig.php (config.php is found in root osTicket directory).
+For newer versions the config.php or ostconfig.php file should be renamed to ost-config.php and moved to the /include folder.
+Note: If you’ve customized your osTicket installation, you will need to port the changes to the new version following a successful upgrade. Database changes might cause conflicts.
+
+Running Upgrade Script
+osTicket ships with web-based upgrade wizard to help guide you through the upgrade process. While the wizard provides step by step guide it is important and helpful to have general knowledge about Web servers, PHP and MySQL. Any errors at this stage, although unexpected, are fatal and might require restoring previous version.
+
+To run the upgrade script, simply login to admin panel of your osTicket helpdesk. The upgrader is now a primary component of the osTicket, so upgrades are triggered automatically anytime you upload a new version which requires a database migration.
+
+When you access the admin panel, the upgrade wizard will be presented and will automatically walk you through the database migration process. Your helpdesk will remain offline, and your staff will be unable to do anything in the staff panel until the database migration has completed.
+
+Warning: If you are upgrading from osTicket 1.6 to osTicket 1.7 and above, please ensure that your attachment upload folder has read and write permission for your http server software. Attachments that are not readable by the http server will be lost in the upgrade process.
+
+Post Upgrade Testing
+Once the upgrade has completed, browse to the staff control panel (scp) and check basics such as viewing and responding to test tickets to ensure things still work as expected. After verifying that the upgrade completed correctly do the following:
+
+Enable the help desk
+Delete setup directory
+Explore any new feature—see Release Notes
+Take a minute to send us feedback
+Migration
+
+We plan on supporting data migration from previous discontinued versions of osTicket as well as 3rd party help desks in the near future. Please check the forums for up to date discussions on the subject.
+
+
+Alerts Guide
+Autoresponder
+Admin Panel > Settings > Tickets > Autoresponder.
+
+Auto-responses are messages which can be enabled to alert end-Users of the events in a Ticket’s lifecycle.
+
+New Ticket: Enable this to send an auto response to the User on new ticket creation.
+
+New Ticket By Agent: Notice sent when an Agent creates a ticket on behalf of the User. Agents can override this when creating new tickets by selecting recipients in the drop down. Options include only notifying the ticket owner, all participants or not sending an alert to either. .
+
+New Message:
+
+Submitter: Confirmation notice sent when a new message is appended to an existing ticket. Submitters can be any participant on a ticket including a collaborator or the owner of the ticket.
+
+Participant: Broadcast messages received from message submitter to all other participants (collaborators or owner) on the ticket.
+
+Overlimit Notice: Ticket denied notice sent to User on Maximum Open Tickets violation. Configuration for this limit is in the Admin Panel > Settings > User.
+
+Alerts and Notices
+Admin Panel > Settings > Tickets > Alerts and Notices.
+
+Alerts and Notices are messages which can be enabled to alert agents of the events in a Ticket’s lifecycle. These message templates can be edited in the Admin Panel > Emails > Templates.
+
+New Ticket Alert: Alert sent out to Agents when a new ticket is created. This Alert is sent to all members enabled; Duplicate alerts are not sent out.
+
+New Ticket
+New Ticket Alert for Admin Email is sent to the listed email for each ticket created in the help desk, regardless of the department it is routed to. This template is not accessible nor editable and can only be globally enabled or disabled. The Admin Email can be set in the Admin Panel > Emails > Settings tab.
+
+New Ticket Alert for Department Manager will be sent to the Department Manager, if set, for the Department the tickets routed to; this will be the New Ticket Alert template message. If the Department Manager is also a Department Member, only one email will be sent to this agent. Note, an agent does not have to have access to this department to be selected as the Manager.
+
+New Ticket Alert for Department Members is sent to the Agents with access to the Department the ticket is routed to when the ticket is created so long as the ticket is not automatically assigned to a specific Agent or Team. (If assigned, no New Ticket Alert will be sent; instead, the Assignment Alert is sent to the Assigned Agent/Team as enabled in the Assignment Alert section.) By Department, you can determine the agents with access to the ticket - Primary Members and/or Extended Access Members - to receive the alert.
+
+New Ticket Alert for Organization Account Manager is sent to the agent or team of agents selected as the Organization Account Manager in the Agent Panel > Users Tab > Organizations Tab > Select Organization > Select Organization name in blue > Settings Tab > Account Manager.
+
+New Message Alert: Alert sent out to Agents when a new message from the User is appended to an existing ticket. This Alert is sent to all members enabled; Duplicate alerts are not sent out.
+
+New Message
+New Message Alert for Last Respondent is sent to the last responding agent when a new message from the end user is appended to the ticket; Regardless of ticket assignment.
+
+New Message Alert for Assigned Agent/Team is sent to the assigned agent or team of agents when a message is appended to a ticket from an end user. This is sent to the agents as long as there is no response from any Agent on the ticket. If there is a response from an agent, only the responding agent will receive the New Message Alert if that alert in this section is enabled.
+
+New Message Alert for Department Manager is sent to the Department Manager, if set, in the department the ticket is routed when a new message is received from the end users. This is only sent to the Department Manager if there is no agent or team assigned to the ticket and there is no response from an agent on the ticket or neither of the previously mentioned alerts are enabled in this section.
+
+New Message Alert for Organization Manager is sent to the Agent or Team of agents set as the Organization Manager in the Agent Panel > User > Organization > Settings. This is sent to the Organization Manager regardless of the last responding agent or assigned agent.
+
+New Internal Activity Alert: Alert sent out to Agents when internal activity such as an internal note or an agent reply is appended to a ticket.This Alert is sent to all members enabled; Duplicate alerts are not sent out.
+
+New Activity
+Internal Activity Alert for the Last Respondent is sent to the last responding agent for activity on a ticket such as an internal note or another agent’s response to a ticket.
+
+Internal Activity Alert for the Assigned Agent/Team is sent to the assigned agent and team if there is no response from another agent posted on the ticket or the alert for last respondent is not enabled.
+
+Internal Activity Alert for the Department Manager is sent to the Department Manager, if set, for the Department, and the Last Respondent and Assigned Agent/Team is not listed or the alerts are not enabled.
+
+Ticket Assignment Alert: Alert sent out to Agents on ticket assignment.
+This Alert is sent to all members enabled; Duplicate alerts are not sent out.
+New Assignment
+Ticket Assignment Alert for Assigned Agent is sent only to the agent the ticket is being assigned to.
+
+Ticket Assignment Alert for Team Lead is sent to the Agent set as the Team Lead if designated at the Team level
+
+Ticket Assignment Alert for Team Members is sent to all team members when a ticket is assigned to the team.
+
+Ticket Transfer Alert: Alert sent out to Agents on ticket transfer between Departments.
+This Alert is sent to all Agents with Primary + Extended Department Access (if enabled at Department level) Duplicate alerts are not sent out.
+New Transfer
+Ticket Transfer Alert for Assigned Agent/Team is sent to the current Assigned Agent/Team of agents of the ticket when the ticket is transferred to a new department.
+
+Ticket Transfer Alert for Department Manager is sent to the Department Manager (if set at the department level) of the department the ticket is being transferred to.
+
+Ticket Transfer for Department Members is sent to all Agents with access (Primary or Extended) to the Department the ticket is being transferred to.
+
+Overdue Ticket Alert: Alert sent out to Agents when a ticket becomes overdue based on SLA or Due Date. This Alert is sent to all members enabled; Duplicate alerts are not sent out.
+
+Overdue Ticket
+Overdue Ticket Alert for Assigned Agent/Team is sent to the current Assigned Agent/Team of agents of the ticket when the ticket becomes overdue (by passing the ticket’s SLA).
+
+Overdue Ticket Alert for Department Manager is sent to the Department Manager (if set at the department level) of the department when the ticket becomes overdue (by passing the ticket’s SLA).
+
+Overdue Ticket Alert for Department Members is sent to all Agents with access (Primary or Extended) to the Department when the ticket becomes overdue (by passing the ticket’s SLA).
+
+System Alerts: Significant system events that are sent out to the Administrator. Depending on the configured Log Level, the events are also made available in the System Logs
+
+System Alert
+Parent/Child Department affect on Alerts/Notices
+
+Agents with access to the Parent Department have access to child department tickets by default with parent department role permissions
+
+Agents can have primary access to the Parent Department or Extended Access to the Parent Department and still have access to child department tickets with the set of permissions associated with the department.
+
+Task Alerts and Notices
+
+Admin Panel > Settings > Tasks > Alerts and Notices Tab.
+
+There are messages which can be enabled to alert agents of the events in a Task’s lifecycle. These messages templates can be edited in the Admin Panel > Emails > Templates and include:
+
+New Task Alert: Alert sent out to Agents when a new task is created. This Alert is sent to all members enabled; Duplicate alerts are not sent out.
+
+Task Alert
+New Activity Alert: Alert sent out to Agents when a new message is appended to an existing task. This Alert is sent to all members enabled; Duplicate alerts are not sent out.
+
+Activity Alert
+Task Assignment Alert: Alert sent out to Agents on task assignment. This Alert is sent to all members enabled; Duplicate alerts are not sent out.
+
+Assignment Alert
+Disabling Alerts
+Autoresponder:
+
+You can manually disable Autoresponder Alerts at the Email level, Help Topic level, Department level, or with the use of Ticket Filters:
+
+Email
+
+You can disable Autoresponders for certain email addresses by going to Admin Panel > Emails > Select an Email Address > locate ‘Auto-Response’ > check the box to disable auto-responses and save changes.
+
+Disable Autoresponder
+Help Topics
+
+Help Topics help streamline your end-user’s help desk experience to ensure proper assignment and prompt response to the ticket. Help Topics are located at Admin Panel > Manage Tab > Help Topics. Select a Topic, select the New Ticket Options Tab > locate Auto-Response > Check the box and save changes to disable Autoresponses for this Help Topic.
+
+See here for additional details on Help Topics.
+
+Disable Help Topic Autoresponder
+Departments
+
+Tickets are routed through Departments in the help desk, there are many settings that can be set for each Department. Departments are located at Admin Panel > Agents Tab > Departments. Select a Department > locate Autoresponder Settings: New Ticket: Check this box to disable the Auto-Response sent to the User when a new ticket is created and routed to this Department. New Message: Check the box to disable the Auto-Response sent to the User to confirm a newly posted message for tickets in this Department.
+
+See here for additional details on Departments.
+
+Disable Departments Autoresponder
+Ticket Filters
+
+Ticket Filters are a set of “If ____, Then____’’ rules that create auto actions for new tickets based on the criteria set forth in the filter. The rules of the filter are applied only to tickets upon creation specific to how the ticket is created. Ticket filters are located at Admin Panel > Manage Tab > Filters. Within the Filter Actions Tab there is an option to select ‘Disable auto response’.
+
+See here for additional details on Ticket Filters.
+
+Disable Ticket Filter Autoresponder
+Alerts and Notices:
+
+You can manually disable Alerts and Notices at the Department level and Agent level. You can also disable assignment alerts at the Team level.
+
+Department Level
+
+Admin Panel > Agents Tab > Departments
+
+You can configure the recipients of Alerts and Notices at the Department level by locating the ‘Alerts and Notices’ section:
+
+Department Alerts and Notices
+Department and Extended Access Members
+
+Enable alerts for all Primary and Extended Access Members in this Department; full list of Agent’s with access can be seen in the Access tab of the Department
+
+Department Members only
+
+Enable alerts for only Agents who have this Department set as their Primary Department; this will included agents in the Top section of the Access tab of the help desk.
+
+Admin Email Only
+
+Only send Alerts and Notices to the system Administrator (this configuration is set at Admin Panel > Emails > Settings > Admin Email.)
+
+No One (Disable Alerts and Notices) Disable Alerts and Notices for all Agents in this Department.
+
+Agent Level
+
+Admin Panel > Agents Tab
+
+You can disable Alerts at the Agent level for any Extended Access Departments by selecting an Agent, then selecting the Access Tab. Locate the Extended Access Departments and un-check the box for Alerts to disable Alerts for a Department, then save changes.
+
+Disable Alerts and Notices
+Primary Departments
+
+You can not disable Alerts specifically for an Agent’s Primary Department. If you want to disable all Alerts for a certain Agent(s), you can create a new Department and disable Alerts for the entire Department (Admin Panel > Agents Tab > Departments.)
+
+Disable Primary Department Alerts One Disable Primary Department Alerts Two
+Next, you will set this department as the Agent’s Primary Department (Admin Panel > Agents Tab > Agent).
+
+Disable Primary Department Alerts Three
+Once complete, be sure to add the Agent’s original Primary Department to the Extended access section so that they maintain access to the Department; Also uncheck the box for Alerts to this Department and save changes.)
+
+Disable Primary Department Alerts Four
+Assignment alert for teams
+
+Admin panel > Agents Tab > Teams.
+
+You can disable the Assignment alert at the Team level by selecting a Team and locating the Assignment Alert; Check the box to disable alerts for this Team and save changes.
+
+Disable Assignment Alert
+Editing Template Messages
+Autoresponder Messages
+
+Autoresponder template messages are located at Admin Panel > Emails Tab > Templates; Select a Template Set to start editing. The ‘Ticket End-User Email Templates’ are the templates associated with Autoresponder messages sent to end Users.
+
+Start editing them by selecting a template message that you would like to edit. Once selecting a message, you can edit the entire template message, including the subject line.
+
+Edit Template Autoresponder
+Alerts and Notices Messages
+
+Alerts and Notices template messages are located at the same place, Admin Panel > Emails Tab > Templates; Select a Template Set to start editing. The ‘Ticket Agent Email Templates’ are the templates associated with Alerts and Notices messages sent to Agents.
+
+Edit Template Alerts and Notices
+Task Alerts
+
+Task Alert template messages are located at the same place, Admin Panel > Emails Tab > Templates; Select a Template Set to start editing. The ‘Task Email Templates’ are the templates associated with Task messages sent to Agents.
+
+Edit Template Task Alerts
+Note: The entire set of email templates can be cloned for use and assigned to a specific Department of the Help Desk. This is especially useful if the messages need to be different for tickets assigned to the Department.
+
+User Account Message Templates
+
+There are additional User Template Messages located Admin Panel > Settings > Users > Templates Tab. These template messages are specific to the Authentication and Registration of Users.
+
+User Account Templates
+Agent Account Message Templates
+
+There are additional Agent Template Messages located Admin Panel > Settings > Agents > Templates Tab. These template messages are specific to the Authentication and Registration of Agents.
+
+Agent Account Templates
+Variables within Templates
+
+You will notice variables in Template Messages:
+
+Variables in Templates One
+Variables automatically pull information (if available) from a submitted ticket. You can use the built-in Variables available, as well as create your own custom variables, specific to your custom fields (on Forms).
+
+Variables are added to a template message by typing %{
+
+Variables in Templates Two
+From there variables are displayed to choose from, or you can manually enter a custom variable set within your Forms.
+
+Variables in Templates Three Variables in Templates Four
+Built-In Variables
+
+Within each email template there is a Supported Variables option in the upper right corner that will provide a partial list of built-in variables available. As the forms are built out to contain additional fields there will be more variables available to be used in the email templates and canned responses.
+
+Built In Variables
+Creating Custom Variables
+
+You can create your own custom variables, specific to custom fields on your Forms.
+
+Forms are located at Admin Panel > Manage Tab > Forms. Start by selecting the Form that you would like to edit:
+
+Custom Variables One
+Next, you will either add a new custom field, or locate one that’s already been added by you previously. In the Variable column of the field you will add a custom name for the variable. You can use both letters and numbers in variables, and variables should have no spacing between words. This variable can later be included in Email Templates or Canned Responses by typing %{ticket.customvariablename}.
+
+Custom Variables Two Custom Variables Three
+If you add a variable to a template and receive the above error message, please note this does not mean the variable is incorrect. This message is alerting the variable may not be value for all instances when the template message is sent out.
+
+Note: Variables can also be used in Canned Responses (located at Agent Panel > Knowledgebase Tab > Canned Responses.
+
+
+Data Extraction Guide
+Exporting Ticket Data (CSV)
+Agent Panel > Tickets
+
+Ticket Exports allow Agents to export ticket header information in a CSV format. This export includes only metadata—such as ticket ID, status, creation date, assigned user, and other key details.
+
+Agents can customize the exported data by selecting which metadata fields to include. Additionally, exports can be filtered by queue or Advanced Search, enabling Agents to refine results based on:
+
+Ticket Data
+User-related Data
+Custom Queue
+This functionality provides a streamlined way to extract and analyze ticket data while maintaining control over the exported information.
+
+Advanced Search
+Advanced Search allows Agents to search and filter tickets based on unique ticket criteria.
+
+Ticket Information
+User Information
+Organization Information
+Form Information
+Ticket Header Information
+Ticket Header information is available from the top of the ticket or the Ticket Header, Agents will see any data associated with the ticket from the built in Ticket Details form.
+
+Ticket Header Information
+Customizing the Export Picker
+Customize the Export Picker to add and remove the fields included in the export picker.
+
+Customize Export Picker
+Dashboard Exports (CSV)
+Agent Panel > Dashboard Tab
+
+Meant to be a historical marker of the metadata in your help desk, the Dashboard will give you an overview of tickets in your help desk. The data can be filtered by date as well as Departments, Help Topics, and Agents.
+
+Export the Ticket Activity data to a CSV file by clicking the Export button at the bottom of the Dashboard.
+
+Dashboard Graph
+
+Dashboard Statistics
+
+
+Translation Guide
+Translating Editable Text
+Updating the Primary and Secondary system languages in your help desk will automatically translate the hard-coded areas such as configuration field labels and command bars as well. Follow the guide below for steps to also translate the administratively editable text in the help desk includes things like; All Email Templates, Custom Fields, Help Topics, Thank you Pages and Knowledgebase articles.
+
+Although the selection of the preferred language by the end user will change the command bar and built-in field data, the Landing Page, or main body of text of the Client Portal needs to be translated in the Admin Panel > Manage > Site Pages. Select a flag to translate the landing page for each available language.
+
+Client Portal Translation One Client Portal Translation Two
+View from Client Portal after selecting the Spanish Language Option:
+
+Client Portal Translation Results
+Translating Knowledgebase Articles
+
+The Knowledgebase is located within the Agent Panel under the Knowledgebase Tab. You can translate Categories and their FAQ’s by selecting the item and then clicking on the flag of the language to enter the translated text.
+
+Translate Knowledgebase
+Translating Custom Field Data
+
+Custom field labels are translated at Admin Panel > Manage > Forms. You can translate the field labels on any form by clicking on the globe icon of the field and adding the primary and/or secondary languages to the field. Once translated, this content will show for the end user or agent when they select their language preference. If the field is not translated, the original or default text will show.
+
+Translate Form
+User’s View from the Client Portal:
+
+User Client Portal View
+
+
+OAuth2 Guide
+Authentication
+OAuth Authentication allows Agents/Users the ability to use Single Sign-on to log into the helpdesk through the provider you set up. The most commonly used providers are Microsoft, Google, and Okta.
+
+Guides:
+
+Microsoft Authentication (SSO) Guide
+
+Google Authentication (SSO) Guide
+
+Okta Authentication (SSO) Guide
+
+Authorization
+Attention
+
+Microsoft has started deprecating certain Outlook endpoints used in Modern Authentication (OAuth2) for Emails. Note, this does not affect user/agent authentication. These deprecations started causing errors similar to The API version v2 has been depreciated when the system attempted to retrieve a new set of Tokens. This prevented new Tokens from being generated which caused authentication failures. We have now made changes to the OAuth2 plugin to support the latest Microsoft deprecations.
+
+Please follow the steps listed here to address the issue.
+
+OAuth2 Authorization allows emails the ability to authenticate against a mail server using the OAuth2 protocol. This eliminates the need to store the password locally and instead redirects you directly to the provider to login. Most provider’s are phasing out Basic Authentication (username + password) for Modern Authentication (OAuth2) but if you host your own mailserver you may not have OAuth2 available. The most commonly used providers are Microsoft and Google.
+
+Guides:
+
+Microsoft Authorization Guide
+
+Google Authorization Guide
+
+Setting Up The Plugin
+First you will need to download the plugin from our website. Make sure you have selected v1.17 or higher and select the ‘Authentication :: Oauth2’ plugin. Once the file is downloaded, copy the plugin file into the include/plugins folder and add the plugin:
+
+Admin Panel | Manage | Plugins
+
+Add Plugin
+
+
+Install Plugin
+
+
+Installed
+
+
+Change the Status from ‘Disabled’ to ‘Active’ and click ‘Save Changes’
+
+oauth10_plugin_active
+
+Admin Panel
+Dashboard Tab
+System Logs
+Information
+Settings Tab
+Company Settings
+Basic Information
+Site Pages
+Logos
+Login-Backdrop
+System Settings
+General Settings
+Date & Time Settings
+Tickets Settings
+Settings
+Autoresponder
+Alerts & Notices
+Queues
+Task Settings
+Settings
+Alerts & Notices
+Agents Settings
+Settings
+Templates
+User Settings
+Settings
+Templates
+Knowledgebase Settings
+Options & Settings
+Manage Tab
+Help Topics
+Create and Assign Help Topics
+Ticket Filters
+How to Create Ticket Filters
+Update/Add New Filter Section
+Filter Rules Section
+Filter Action Section
+SLA Plans
+Create A New SLA Plan
+Schedules
+Create a Schedule
+Business Hours
+Holiday Hours
+Diagnostics
+Clone a Schedule
+System Default Schedule
+SLA Schedule
+Department Schedule
+API Keys
+Adding/Enabling/Disabling/Deleting an API Key
+Pages
+How to Edit Site Pages
+Forms
+Creating and Using Forms
+Custom Forms
+Built-In Forms
+Lists
+Create New Custom List
+Creating Custom Ticket Statuses
+Plugins
+Add New Plugin
+Emails Tab
+Email
+Add New Email
+Settings
+Settings & Options
+Ban List
+Templates
+Diagnostics
+Test Outgoing Mail
+Agents Tab
+Agents
+Agent Access
+Teams
+Roles
+Departments
+
+Agent Panel
+Dashboard Tab
+Dashboard
+Agent Directory
+My Profile
+Account
+Preferences
+Signature
+Users Tab
+User Directory
+What is a User?
+Add New Users
+User Import via Copy/Paste
+User import via CSV file
+Guest User vs Registered User
+Managing Registered Users
+Reset a User’s password
+Organizations
+Tasks Tab
+Tasks
+Tickets Tab
+Advanced Search
+Custom Columns:
+Quick Filters:
+Tickets
+Ticket Header
+Ticket Thread
+Personal queues
+What is a Custom Queue?
+What is a Custom Column?
+How do I create my own personal queues?
+Where can I edit the personal queues I create?
+How do I add/modify columns to a personal queue?
+Adding Columns To A Personal Queue
+Adding Quick Filters
+Knowledgebase Tab
+Knowledgebase
+Add Canned Response
+Add FAQ to Category of the Knowledge Base
+
+
+User Portal
+Open A Ticket
+Check Ticket Status
+Using Email Address & Ticket Number
+With User Account
+Knowledgebase
+
+
+
+Multifactor Authentication
+Multifactor Authentication, sometimes referred to as Two Factor Authentication, adds an extra layer of authentication set up for Agents.
+when they log into the helpdesk. Once they correctly submit their username and password, they will be required to submit a token to finish logging into the helpdesk.
+
+
+Agents can configure their Default 2FA settings by going to their profile.
+
+Agent Profile
+
+
+Agent Profile 2FA
+By default, Agents are not required to set up Multifactor Authentication. An administrator can require Multifactor Authentication by going to:
+
+Admin Panel | Settings | Agents | Require agents to turn on 2FA
+
+Require Multifactor Authentication
+Once enabled, Agents will be required to configure and save their Default 2FA method before accessing the helpdesk.
+
+Configure 2FA
+
+
+2FA Options
+
+
+Configure Email 2FA 1
+
+
+Configure Email 2FA 2
+
+
+Configure 2FA Token
+
+
+Configure 2FA Verify Token
+Once 2FA has been configured, the Agent must also save the configured method as well.
+
+Choose Default 2FA
+
+
+Save Default 2FA
+The next time the Agent logs into the helpdesk, they will be prompted to enter a token to finish logging into the helpdesk.
+
+
+
+Agent Login
+
+
+Agent Verify Token
+
+
+Agent Token Email
+
+
+Agent Submit Token
+An administrator can edit the Email Template sent for the verification token by going to:
+
+Admin Panel | Settings | Agents | Templates | Two Factor Authentication Email
+
+Agent Email Templates
+
+
+Two Factor Authentication Email Template
+Note: The template variable that contains the token is %{otp}
+
+In the event that an Agent becomes locked out of their account, an Administrator can reset their 2FA configuration by going to:
+
+Admin Panel | Agents | click Agent | Reset 2FA
+
+Reset 2FA
+
+Visibility Permissions
+New Permissions have been added to limit the visibility of Departments, Agents, and Help Topics based on an Agent’s Department access.
+
+
+These permissions can be found by going to:
+
+Admin Panel | Agents | Select an Agent | Permissions Tab | Miscellaneous
+
+Permissions Boxes
+New Permissions:
+‘Agent — Ability to see Agents in all Departments’
+‘Department — Ability to see all Departments’
+
+Both of these boxes are checked by default for new Agents as well as existing Agents (in the case of an upgrade).
+
+Throughout this documenation, as an example, let’s say I have an Agent with Access to only the Support Department.
+
+Department Access
+The Agent has the following set for Permissions:
+
+Permissions Example
+Agent — Ability to see Agents in all Departments
+When this box is unchecked for an Agent, the Agent will only be able to see Agents who belong to a Department they have access to within the Agent Panel.
+
+An Administrator can easily see which Agents should be visible within the Agent Panel of the helpdesk by doing an Agent Export and comparing Department permissions for the desired Agent.
+
+Export Agents
+Here is what the export looks like. The names of Agents that will be visible are purple.
+
+Agent Export
+Note: Agents set to on Vacation do not show up throughout most of the Agent Panel.
+
+Based on this export, Agent Adriane1 should be able to see Adriane2 and Adriane3 throughout the Admin Panel.
+
+Note: They can see themselves as well.
+
+Agent Visibility 1 Agent Visibility 2 Agent Visibility 3
+This includes the following:
+
+Queue Assign Mass Process
+Ticket open Assign
+Ticket View assign
+Ticket Inline Edit Assign
+Ticket Refer Agent
+Assigned Staff Quick Filter
+Assignee Quick Filter
+Department Manager Quick Filter
+Agent Directory
+Task Creation
+Ticket Creation
+Advanced Searches
+Department — Ability to see all Departments
+When this box is unchecked for an Agent, the Agent will only be able to see Departments they have access to within the Agent Panel.
+
+Let’s take a look at the Departments in our example helpdesk. Remember, Adriane1 only has access to the Support Department.
+
+All Departments
+Note: Archived and Disabled Departments do not show up throughout the Agent Panel.
+
+Department Visibility 1 Department Visibility 2 Department Visibility 3
+This includes the following:
+
+Ticket Transfers
+Task Transfers
+Ticket Refer Department
+Task Creation
+Ticket Creation
+Department Quick Filter
+Custom Department Field Quick Filters
+Advanced Searches
+Canned Responses
+This permission also limits Canned Responses that an Agent can see.
+
+The Agent will only be able to see Canned Responses for Departments they can access (Primary or Extended Access) or Canned Responses assigned to all Departments.
+
+Canned Responses
+Agents are only able to create/edit Canned Responses for Departments they have access to as well.
+
+New Canned Response
+Help Topics
+Help Topics are hidden from the Agent Panel if they are assigned a Department an Agent does not have access to and the Agent does not have the ‘Ability to see all Departments’ permission checked.
+
+Here are the Help Topics for our example helpdesk:
+
+All Help Topics
+If a Help Topic is Public, it will be shown in the Agent Panel.
+
+If a Parent Help Topic is Private and assigned a Department an Agent does not have access to, we hide both the Parent and Children Help Topics.
+
+If a Help Topic is assigned the System Default Department, it is shown throughout the Agent Panel.
+
+Note: Archived and Disabled Help Topics do not show up throughout the Agent Panel.
+
+Based on our screenshot, Feedback, Report a Problem, and Access Issue should be hidden based on the permission checked.
+
+Archived and Disabled would not show up either, regardless of the permission since they are not Active.
+
+Note: Even though we do not have access to the Outlook Department, General Inquiry will still show up since it is a Public Help Topic.
+
+Filtered Topics:
+
+Topic Visibility 1
+Note: Archived or Disabled Help Topics still show up for quick filters and searches.
+
+Topic Visibility 2
+When the Department Permission box is checked, all Help Topics are visible.
+
+Department Permission Checked Topic Visibility 3
+Help Topics are filtered for:
+
+Inline Ticket Edit
+Ticket Edit
+Ticket Open
+Advanced Search
+Quick Filters
+Dashboard
+
+
+
+Previously Released
+ACL (Access Control List)
+Agent CSV Export
+Archiving Departments and Help Topics
+Collaborators
+Create Ticket or Task from Thread Entry
+Custom Columns & Custom Queues (Admin)
+Custom Columns & Custom Queues (Agent)
+Department CSV Export
+Expanded Print View
+Inline Edit
+Nested Knowledgebase Categories
+Release Assignment
+Require Help Topic
+Task Revamp
+Ticket Merge/Link
+Ticket Referral
+
+
+
+ACL (Access Control List)
+The Access Control List (ACL) feature allows you to enter a single IP address or a comma separated list of IP addresses to allow access to the system. Essentially, this means whatever IP address is in the ACL field will have access to the specified Panels of the software. If the field is left blank your helpdesk is open to the world. This feature is useful for those who wish to lock down their helpdesk to certain clients, to just their internal network or just to list of IP addresses.
+
+ACL List
+The ACL List is pretty straightforward as it’s just a simple Textbox field in which you can insert a single IP address or a comma separated list of multiple IP addresses. For now, it only accepts the full IP address format of xxx.xxx.xxx.xxx. Eventually we plan to accept an IP range format, wildcard format, etc. but for now let’s keep it basic. If you insert multiple IP addresses you have to use the Comma Separated List format of xxx.xxx.xxx.xxx, yyy.yyy.yyy.yyy.
+
+ACL List
+Note:
+
+IPs cannot have a trailing comma otherwise a validation error will be thrown.
+
+ACL Validation Error
+Apply To
+After the ACL List is populated you can then choose an Apply To option. The Apply To option states which panel(s) the ACL will be applied to. There are four options in the Apply To dropdown that you can choose from. The first option is called “Disabled” which means the ACL feature will be Disabled. The second option is called “All” which means the ACL will be applied to all Panels in the helpdesk. The third option is called “Client Portal” which means the ACL will only be applied to the Client Portal. The last option is called “Staff Panel” which means the ACL will only be applied to the Staff/Admin Panel.
+
+ACL Apply To Dropdown
+Example Usage
+Let’s go through an example together so we can see how this feature works. Let’s say we want to lock down our helpdesk and we only want the following IPs to have access to the entire system (192.168.100.100, 192.168.100.101, 192.168.100.102). We would go to Admin Panel > Settings > System and scroll down to the ACL section. Now, since we have multiple IP addresses we have to use the comma separated list format. In the ACL List textbox we can enter the following 192.168.100.100, 192.168.100.101, 192.168.100.102. Since we would like to lock down our entire helpdesk we can choose the All option in the Apply To dropdown. Once complete we can Save Changes and from then on only the specified IP addresses can access the helpdesk. Anyone else trying to visit the site will be denied with Access Denied error.
+
+
+
+Agent CSV Export
+Admins are now able to download a CSV export that displays all Agents in the system as well as their access to each Department.
+
+
+Go to:
+Admin Panel | Agents Tab | Agents
+
+All Agents
+Click the down arrow beside ‘More’ and choose the ‘Export Agents’ option.
+Export Agents
+CSV Output:
+Export Agents Output
+The output shows each Agent, their Username, and their Status as well as the Permissions they have. Each additional column shows the Departments in the system as well as each Agent’s role for that Department. If the Agent does not have access to a Department, the Role is left blank.
+
+
+
+Archiving Departments and Help Topics
+Occasionally it could become necessary to no longer use certain Departments or Help Topics within a helpdesk. Even though they will no longer be used in the future, there could be some Tickets that are still assigned to the Department or Help Topic. In addition, there are important Dashboard Statistics already stored. To resolve these issues, Admins may now choose to Archive Departments or Help Topics.
+
+Departments:
+Departments can have a status of Active, Archived, or Disabled.
+
+Active departments can be selected for new tickets and used throughout the system as usual.
+
+Archived departments may not be chosen for any new tickets. If a closed ticket receives a response from a user and has an Archived department, a new ticket will be opened referencing the ticket’s old title and number. It will have the System Default chosen as the Department.
+
+Closed ticket in Archived Department:
+
+Archived Closed Department 1
+
+Archived Closed Department 2
+User response to the Closed ticket:
+
+Closed Archived Department Response
+A new ticket is now opened referencing the ticket’s old title and number if a User replies by email to the closed ticket.
+
+Disabled departments may not be chosen for any new tickets either, however, if a closed ticket receives a response, the system will reopen the ticket.
+
+Closed ticket in Disabled Department:
+
+Closed Disabled Department
+User response to the Closed ticket:
+
+Response Closed Disabled Department
+Changing the Department Status:
+1. Go to: Admin Panel | Agents Tab | Departments
+
+Click a Department to modify.
+Edit Department 1
+
+Edit Department 2
+Modify multiple Departments at once.
+
+An agent can change the Status of multiple Departments at once by selecting the checkbox beside each Department to modify and selecting the desired option in the ‘More’ dropdown.
+Edit Multiple Departments
+Help Topics:
+Help Topics behave in the same way as Departments. They may have a status of Active, Archived, or Disabled.
+
+Closed ticket in Archived Help Topic:
+
+Closed Archived Department 1
+
+Closed Archived Department 2
+User response to the Closed ticket:
+
+Archived Help Topic Response
+A new ticket is now opened referencing the ticket’s old title and number.
+
+Closed ticket in Disabled Help Topic:
+
+Closed Disabled Help Topic
+User response to the Closed ticket:
+
+Closed Disabled Help Topic Response
+Changing the Help Topic Status:
+1. Go to: Admin Panel | Manage | Help Topics
+
+Click a Help Topic to modify.
+Edit Help Topic 1
+
+Edit Help Topic 2
+Modify multiple Help Topics at once.
+
+An agent can change the Status of multiple Help Topics at once by selecting the checkbox beside each Help Topic to modify and selecting the desired option in the ‘More’ dropdown.
+Edit Multiple Help Topics
+When viewing Dashboard Statistics for Departments and Help Topics, Agents will be able to see the statistics for Disabled or Archived items, and it will state whether the items were Archived or Disabled.
+
+Departments:
+
+Departments In Dashboard
+Help Topics:
+
+Help Topics In Dashboard
+
+
+
+Collaborators
+Collaborators are additional participants that may be included in a Ticket’s communications.
+This document will outline changes that have been made to how this feature works.
+
+New Features:
+Add collaborators as well as CC them when opening a ticket from the Agent Panel.
+Add collaborators as well as CC them when replying to a ticket as an Agent.
+Manage collaborators (add/remove collaborators).
+Change the email address where a ticket is sent out from.
+View recipients that receive a reply from an agent.
+As an end user, there is now an icon on the ticket list view to determine if you are a collaborator.
+New Email Template variables.
+New setting to hide Tickets where the User is a Collaborator in the Web Portal.
+Collaborators on Ticket Open:
+When an Agent creates a Ticket on behalf of a User, they now have the option to add Collaborators.
+They also have the option to alert all (User and Collaborators), alert only the User, or do not send an email alert.
+
+*Note: If the ‘New Ticket by Agent’ autoresponse is disabled Agents to not have the Ticket Notice options.
+
+Collaborators Open Ticket
+Collaborators on Ticket Reply:
+Similarly, an Agent can add Collaborators or choose which Collaborators receive an email when replying to a Ticket.
+Initially upon viewing a Ticket, the Agent can see how many Collaborators the Ticket has.
+
+Collaborators Ticket Reply
+By clicking the arrow beside Collaborators, the Agent is given more options for how to handle Collaborators in their reply like
+adding new Collaborators or managing existing Collaborators.
+
+Collaborators Ticket Reply Expanded
+Collaborators that are removed by clicking the ‘x’ in the left corner of the their name will be disabled in the Ticket,
+meaning they will no longer receive any of the Agent’s responses.
+
+Collaborators Ticket Reply Expanded
+Disabled Collaborators can easily be Enabled again by reselecting and enabling them.
+
+Collaborators Ticket Reply Expanded
+
+Collaborators Ticket Reply Expanded
+To completely remove a Collaborator, the Agent must go to ‘Manage Collaborators’.
+
+Manage Collaborators:
+There are several places where an agent can go to manage collaborators. The first is beside the User’s name on the ticket.
+There is a group icon with the number of collaborators the ticket has.
+
+Manage Collaborators Users
+The second place is in the drop down menu next to the ticket settings icon. There is an item to ‘Manage Collaborators’.
+
+Manage Collaborators Dropdown
+Finally, you can manage collaborators by clicking the Collaborator listing at the bottom of the Ticket or by
+clicking in the expanded Collaborators menu.
+
+Manage Collaborators Users
+
+Manage Collaborators Users
+After clicking one of these options, the menu appears to manage the collaborators.
+The trash can to the far right of the row allows you to remove collaborators from a ticket.
+You can also add new collaborators.
+
+Standard View:
+
+Collaborators Standard View
+Remove:
+
+Remove Collaborator Completely
+Add:
+
+Add Collaborator
+
+Collaborator User Selected
+
+Collaborator Added
+*Note: The checkbox to the left of the Collaborator’s name indicates if the Collaborator is Enabled or Disabled. Disabled Collaborators will not receive Ticket responses.
+This action is the same as clicking the ‘x’ in the left corner of a Colalborator’s name in the expanded Collaborator menu at the bottom of the Ticket.
+
+‘From’ Email:
+In the past, tickets were always sent out using the email address belonging to the Ticket’s Department.
+Agents are now able to choose which email address a ticket is sent out from if your system has more than one email configured.
+
+From Email
+By default, tickets are sent out from the email address chosen for the department’s Outgoing Email.
+The department’s default address can be modified by going to:
+
+Admin Panel | Agents Tab | Departments | Choose a Department | Outgoing Email
+
+Outgoing Email
+Collaborator Responses:
+An Agent is able to determine that a Collaborator has responded to the ticket by looking at the label next to each message.
+
+Collaborator Response:
+
+Cc Response
+User Response:
+
+User Response
+*Note: When a User or Collaborator replies to an email, Alerts are NOT sent out to other participants,
+while Alerts ARE sent out when a User or Collaborator replies using the Web Portal.
+This is simply because the User or Collaborator has the option to reply to all recipients or to reply only to the helpdesk when replying to the email.
+
+View Email Recipients:
+Any time an email is sent out whether it is from the Agent or the User, there is now an option to see who the email was sent out to.
+This can be done by clicking the drop down arrow beside a Ticket thread and selecting ‘View Email Recipients’.
+
+User Response:
+
+User Response
+
+User Recipients
+Agent Response:
+
+Agent Response
+
+Agent Recipients
+Additionally, an Agent is able to see if a response was a Reply All, Reply to User, or reply to no one by looking at the tag in the corner of the Thread Entry.
+*Note: When a Ticket is created on behalf of a User, the initial message entered by the Agent will have the appropriate tag as well.
+
+Reply Tag
+Collaborator Icon:
+When end users log into the system and view the list of tickets they have access to, they will now see an icon beside the ticket name if they are a
+Collaborator on the ticket. If there is no icon, they are the ticket owner.
+
+Collaborator Icon
+Email Template Variables:
+Ticket Recipients:
+
+Format: %{ticket.recipients} This variable displays a list of visible/active users that are collaborating on a ticket.
+
+Hide Collaborator Tickets:
+In some instances, Agents may only want their Users to see their own Tickets if they log into the Web Portal rather than every Ticket they participate in.
+We now have a setting to control this.
+
+If the Agent would like to disable Users from seeing their Collaborator Tickets, they can configure the setting here:
+Admin Panel | Tickets | Settings | Collaborator Tickets Visibility
+
+Tickets Visibility
+By default, Users are able to see all Tickets they participate in.
+
+View of All Tickets:
+
+All Tickets
+View of only the User’s Tickets:
+
+User tickets
+
+
+Create Ticket or Task from Thread Entry
+Agents now have the ability to create a Ticket or Task from a Ticket’s thread entry or from a Tasks thread entry.
+
+
+Ticket From Ticket Thread Entry
+Original Ticket:
+
+Ticket From Ticket 1
+Opening the New Ticket from the Ticket Thread Entry:
+
+Ticket From Ticket 2
+*Notice: The attachment from the original Ticket is carried over into the new Ticket.
+
+New Ticket that was created:
+
+Ticket From Ticket 3
+*Notice: An Internal Note is added to the new Ticket referencing the Ticket Number the new Ticket was created from.
+Clicking on that reference will open the original Ticket.
+
+Original Ticket After:
+
+Ticket From Ticket 4
+*Notice: An Internal Note is added to the original Ticket referencing the new Ticket’s number as well as the Thread Entry the Ticket was created from.
+Clicking the Ticket Number will open the new Ticket that was created. Clicking the Thread Entry will scroll the Ticket up to the Thread Entry the new Ticket was created from.
+
+Task From Ticket Thread Entry
+Original Ticket:
+
+Task From Ticket 1
+Task being created from Ticket:
+
+Task From Ticket 2
+*Notice: The attachment from the original Ticket is carried over into the new Task.
+
+Original Ticket After:
+
+Task From Ticket 3
+*Notice: An Internal Note is added to the original Ticket referencing the new Task’s number as well as the Thread Entry the Task was created from.
+Clicking the Task Number will open the new Task that was created. Clicking the Thread Entry will scroll the Ticket up to the Thread Entry the new Task was created from.
+
+New Task that was created:
+
+Task From Ticket 4
+*Notice: An Internal Note is added to the new Task referencing the Ticket Number the new Task was created from.
+Clicking on that reference will open the original Ticket.
+
+Ticket From Task Thread Entry
+Original Task:
+
+Ticket From Task 1
+Opening the New Ticket from the Task Thread Entry:
+
+Ticket From Task 2
+*Notice: The attachment from the original Task is carried over into the new Ticket.
+
+New Ticket that was created:
+
+Ticket From Task 3
+*Notice: An Internal Note is added to the new Ticket referencing the Task Number the new Ticket was created from.
+Clicking on that reference will open the original Task.
+
+Original Task After:
+
+Ticket From Task 4
+*Notice: An Internal Note is added to the original Task referencing the new Ticket’s number as well as the Thread Entry the Ticket was created from.
+Clicking the Ticket Number will open the new Ticket that was created. Clicking the Thread Entry will scroll the Task up to the Thread Entry the new Ticket was created from.
+
+Task From Task Thread Entry
+Original Task:
+
+Task From Task 1
+Opening the New Task from the Task Thread Entry:
+
+Task From Task 2
+*Notice: The attachment from the original Task is carried over into the new Task.
+
+Original Task After:
+
+Task From Task 3
+*Notice: An Internal Note is added to the original Task referencing the new Task’s number as well as the Thread Entry the Task was created from.
+Clicking the Task Number will open the new Task that was created. Clicking the Thread Entry will scroll the Task up to the Thread Entry the new Task was created from.
+
+New Task that was created:
+
+Task From Task 4
+*Notice: An Internal Note is added to the new Task referencing the Task Number the new Task was created from.
+Clicking on that reference will open the original Task.
+
+Custom Columns & Custom Queues (Admin)
+What is a Custom Queue?
+A custom queue is a view of tickets based on a custom criteria that you specify. It allows you to create your own personal views of tickets and specify what information you would like to see.
+
+What is a Custom Column?
+A custom column is an additional field that is not displayed initially when viewing the ticket tab. Using custom columns allows you to include these fields in the ticket list.
+
+Before adding custom columns:
+
+Before Adding Custom Columns
+After adding custom columns:
+
+After Adding Custom Columns
+How can I add a global queue that everyone can see?
+Admin Panel | Settings Tab | Tickets | Queues Tab | Add New Queue
+
+Add Global Queue
+From here, you can configure the new queue by selecting the criteria of tickets for the queue:
+
+Configure Global Queue
+For this example, I chose to create a queue for the Support Department.
+
+Once the queue is created:
+
+After Global Queue
+Where can I edit the default columns and queues?
+Admin Panel | Settings | Tickets | Queues
+
+Edit Default Queues
+How do I add more columns to a queue?
+Admin Panel | Settings | Tickets | Queues
+
+Add More Columns To Queue
+From there, you will need to select the queue you want to add columns to. In this example, I will select the Open queue.
+
+Open Queue
+Next, you should select the ‘Columns’ tab.
+
+Columns Tab
+Within the ‘Columns’ tab, you can select fields to be added as columns, edit the order in which fields show up by dragging the rows, and choose which fields should have the option to be sorted.
+
+Additionally, clicking the ‘Config’ button beside a field allows you to:
+
+Determine how ticket data is displayed
+For example, what is shown when hovering over a link or what format dates display as.
+
+Queue Column Manage
+
+Queue Column Manage 2
+Note: Primary and Secondary Data Source refer to the field’s data that will show up in a column. Secondary Data Source allows you to choose an alternative field’s data to display if the Primary Data Source is not populated.
+
+Add an annotation to show up beside specified fields
+Column Annotation
+An annotation is a small icon that represents more information about a field. For example, the annotation for thread count displays as a chat icon with the number of responses included on a ticket
+
+Annotation Preview
+Add (or modify) conditional styling
+Add
+
+Add Column Conditions
+Modify
+
+Modify Column Conditions
+Do custom queues support conditional styling?
+There is a feature to add style to queues. These settings can be found by going to: Admin Panel | Settings | Tickets | Queues
+
+Add Styling To Queue
+From there, you will need to select the queue you want to add conditional styling to. In this example, I will select the Open queue.
+
+Open Queue
+Once you select a queue, you should select the ‘Conditions’ tab where you are able to specify what styling you want and under which criteria. Many options are included to manipulate the color, font style, and text of ticket records.
+
+Before Adding Conditions:
+
+Before Adding Conditions
+After adding conditions:
+
+After Adding Conditions
+Once you save a style, you can click the preview tab to see how it looks.
+
+Queue Styling Saved
+Adding conditions this way will apply the style to the whole row, as shown above.
+
+If you decide that you want to discard the styling, you can do so by clicking the trash can beside the style.
+
+Delete Style Button
+Additionally, you can add conditional styling to only one field specified. To do this, select the Columns tab within the queue you are adding style to.
+
+Columns Tab
+Click the ‘Config’ button for the column to add style to it and then select the ‘Conditions’ tab.
+
+Conditions Tab
+In this example, I have chosen to add a background color to Departments with the name ‘Support’
+
+Once saved, tickets where the Department is ‘Support’ will have the style added to only the Department column.
+
+Style Added
+How can I customize how tickets are sorted in queues?
+Sorting options can be found by going to: Admin Panel | Settings | Tickets | Queues
+
+Customize Ticket Sorting
+From there, you will need to select the queue you want to add column sorting to. In this example, I have selected the Open queue.
+
+Open Queue
+There are two ways to control how tickets are sorted, and both options can be found from this menu.
+
+By enabling column sort which will let you sort by a column that is clicked
+Selecting the ‘Columns’ tab lets you specify which columns should be sortable by placing a check in the sortable box.
+
+Columns Tab
+Specifying the dropdown sort options. These settings can be found by going to:
+Selecting the ‘Sort’ tab allows you to specify what sort filters you would like to see in the sort dropdown.
+
+Queue Sort
+Once saved, you can see your filters by going to tickets and clicking on the Sort dropdown
+
+Sort Dropdown
+What is the Parent Queue?
+The parent queue is used to determine which column a queue falls under.
+
+Parent Queue
+In this example, Cloned Queue, Unanswered, Unassigned, and My Tickets have ‘Open’ as the Parent Queue.
+
+Open Parent Queue
+When viewing the ‘Open’ tab, each of these queues are visible.
+
+Open Child Queues
+What are Quick Filters?
+When editing a queue, there is an option to add a Quick Filter. This adds an option at the top of the page to quickly filter by a specified field.
+
+Quick Filter
+In this example, I will add a quick filter for the Department.
+
+Add Quick Filter
+Now, when I view the Open Tickets queue, I can filter tickets by each Department I have access to.
+
+Quick Filter Dropdown
+If I click on ‘Sales’, only tickets in that Department will be shown.
+
+Sales Filter
+What does the Default Sorting option do?
+When editing a queue, there is an option to choose the Default Sorting. This automatically chooses which sorting option agents will see by default.
+
+Default Sorting
+By default, no sort is chosen.
+
+No Sorting Default
+Update sort:
+
+Update Default Sort
+Once changed:
+
+Default Sort Changed
+
+
+Custom Columns & Custom Queues (Agent)
+
+What is a Custom Queue?
+A custom queue is a view of tickets based on a custom criteria that you specify. It allows you to create your own personal views of tickets and specify what information you would like to see.
+
+What is a Custom Column?
+A custom column is an additional field that is not displayed initially when viewing the ticket tab. Using custom columns allows you to include these fields in the ticket list.
+
+How do I create my own personal queues?
+Each tab has a drop down menu where you can select the option to ‘Add Personal Queue’.
+
+Create Personal Queue
+You are then prompted to specify what criteria of you would like to see in regards to tickets in your personal queue:
+
+New Personal Queue
+
+Save New Personal Queues
+Once you have saved your changes, the new queue will appear in the list:
+
+Personal Queue Created
+Note: Only you can see your personal queues
+
+Where can I edit the personal queues I create?
+To edit your personal queues, simply go to the queue and click the settings button that appears beside the title and choose Edit.
+
+Edit Queue Button
+From there, you are able to change the criteria options originally chosen:
+
+Change Queue Criteria
+How do I add/modify columns to a personal queue?
+Within the same edit menu, select the ‘Columns’ tab:
+
+Queue Edit Columns Tab
+By default, columns will be inherited from the Parent queue which is ‘Open’ in this case. The parent queue can be changed using the dropdown box indicated with the arrow.
+
+Parent Queue Dropdown
+Once the ‘Inherit columns from the parent queue’ box is unchecked, more customizations can be made.
+
+Here, you have the option to rename columns, modify their width, and remove columns. You can also rearrange the columns by dragging them by the double arrows to the far left.
+
+Column Rearrange
+The sortable checkboxes make the column headings clickable. If you click the heading, tickets are sorted by that column. In this example, I have clicked the ‘Subject’ column displaying the tickets in alphabetical order by the Subject.
+
+Sortable Subject
+Adding Columns To A Personal Queue
+Click ‘Edit’ for your personal queue and go to the ‘Columns’ tab and scroll to the bottom of the window:
+
+Add Column To Personal Queue
+Click ‘Add’ and Save the changes.
+
+Add Button
+Now the ‘Due Date’ field can be seen in the Personal Queue.
+
+Due Date Field
+Adding Quick Filters
+Quick Filters add an option to the top of the page to quickly filter by a specified field. Agents can add Quick Filters to Custom Queues by editing the Queue and going to the Settings tab.
+
+Personal Quick Filter 1
+
+Personal Quick Filter 2
+Once saved, an Agent can quickly filter tickets by the field of their choice
+
+Personal Quick Filter 3
+In addition to being able to create personal queues, Agents can also modify how existing queues show up specifically to them by editing the existing queues.
+
+For example, editing the Open queue:
+
+Edit Existing Queue
+From here, Agents can customize existing queues in the same way they can customize their own personal queues.
+
+Edit Existing Queue 2
+
+
+Department CSV Export
+Administrators are now able to download a CSV export of which Agents can access different Departments.
+
+
+Go to:
+Admin Panel | Agents Tab | Departments
+
+All Departments
+Select a Department
+Select Department
+Click the ‘Access’ tab
+In the top right corner of the page, there is a download button. Simply click this button to export the CSV.
+Export Department CSV
+CSV Output:
+Department CSV Output
+*Note: The access type may be Primary or Extended depending on which type of access an Agent has.
+
+
+Expanded Print View
+The Expanded Print View feature allows an Agent to print more than just Thread Entries and Internal Notes. It offers the option of printing all of the Ticket’s Thread Events in the PDF. Expanded Print View renders all Thread Events like Ticket changed Status, Field value updated, Ticket Owner changed, etc. This feature requires no special permissions or settings in order to utilize it.
+
+Example Usage
+There are two methods in which you can select the Thread Events option when Printing. The first method is by selecting a checkbox labled Print Events: Print Thread Events in the Ticket Print Options popup.
+
+Ticket Print Popup With Events Checkbox
+The second method to print all Thread Events is to select the Thread + Internal Notes + Events option in the Ticket Print dropdown.
+
+Ticket Print Dropdown Events Option
+Once you either select the checkbox or select the option in the dropdown you should see the Thread Events in your PDF file.
+
+Expanded Print Sample
+
+
+
+Inline Edit
+With Inline Edit, an Agent can modify an individual field on a ticket without having to edit the entire ticket. Within the ticket header, each field that can be edited inline is selectable (highlighted in blue) and can be changed by simply clicking the field value. Inline editing can be done on a ticket’s standard fields as well as custom fields.
+
+Standard Fields
+Standard Fields
+Custom Fields
+Custom Fields
+Once a field value has been clicked, a popup will appear allowing an agent to change the field as well as providing a reason for the update.
+
+Ticket Update
+Field Update
+Field Update
+Once saved, the change is noted in the ticket’s history.
+
+Ticket Update Event
+
+
+Nested Knowledgebase Categories
+Agents now have the ability to further organize their Knowledgebase by nesting categories beneath each other.
+
+Configuration
+First the Administrator should make sure that the Knowledgebase has been enabled.
+
+Go to:
+Admin Panel | Settings | Knowledgebase | Enable Knowledge Base
+Enable Knowledgebase
+Next, an Agent should create a category.
+
+Creating Categories
+Go to:
+Agent Panel | Knowledgebase Tab | Categories | Add New Category
+Create Category 1
+
+Create Category 2
+*Note: The category must be set to Public to be seen in the Client Panel.
+
+*Note: There must be at least one FAQ in a Category for the Knowledgebase to be visible in the Client Panel.
+
+Now that you have an existing Category, you have the option to create a Child category.
+
+Go to:
+Agent Panel | Knowledgebase Tab | Categories | Add New Category
+This time, choose the existing Categoy to be the Parent Category.
+
+Choose Parent Category
+When viewing the Categories tab, Nested Categories are displayed like the following:
+
+View Categories
+The name of the Parent is displayed first followed by the name of the Child, separated by ‘/’.
+
+The final step is to add FAQ’s to the categories.
+
+Creating FAQs
+Go to:
+Agent Panel | Knowledgebase Tab | FAQs | Click a Category | Add New FAQs
+Adding an FAQ to the Parent Category:
+
+Add Parent FAQ 1
+
+Add Parent FAQ 2
+*Note: The Listing Type must be set to Public to be seen in the Client Panel.
+
+Adding an FAQ to the Child Category:
+
+Add Child FAQ 1
+
+Add Child FAQ 2
+When viewing the FAQs tab, you see the Child Category listed as a folder beneath the Parent Category and a count of how many FAQs are within each.
+
+View FAQs
+*Note: The Parent Category has 2 FAQ’s: one that was created in the Parent and one that was created in the Child category while the Child Category only has the FAQ that was created specifically for it.
+
+Now that FAQs have been added, Users are able to see the Knowledgebase from the Client Portal:
+
+List of all Categories:
+
+All Categories
+Parent Category:
+
+Parent Category Client Side
+Child Category:
+
+Child Category Client Side
+
+Release Assignment
+The Release Assignment feature allows Agents to release ticket assignment from other Agents and/or Teams. Agents may only access this feature if they have the new Release Role Permission assigned to them. An important thing to note is Department Managers do not need the Role Permission in order to release assignment of tickets within their Department.
+
+
+Release Role Permission
+To access the Release Assignment feature the Agent’s assigned Role for the Department must have the Release Role Permission enabled. To enable the permission for any Role an Administrator may navigate to Admin Panel > Agents > Roles and click on the name of the desired Role. Under the Permissions tab, check the box next to the Release permission, and Save Changes.
+
+Release Role Permission
+Release Agent & Team
+Upon viewing an assigned ticket a Release (unassign) Ticket option will appear in the More dropdown (Cog-wheel Icon). Clicking this option will introduce a Release Confirmation modal on screen. If a ticket has both an Agent and Team assigned checkboxes will appear next to each name giving the option to choose whom to release assignment from. Checking both boxes will release assignment from both the Agent and Team. Checking one box will release assignment from only the selected Agent/Team.
+
+Release Agent & Team
+Release Agent or Team
+If a ticket has only one Agent or Team assigned the modal will simply ask to confirm the release.
+
+Release Agent or Team
+Internal Note
+Both modals give Agents the ability to input a reason for releasing the assignment. If a reason is given it is added to the ticket thread as an Internal Note.
+
+Release Internal Note
+Thread Event
+When an Agent releases assignment a Release Thread Event is added to the ticket thread. This thread event shows who released whose assignment and contains a date and time stamp of when the released occurred.
+
+Release Thread Event
+
+
+Require Help Topic
+Admins now have the option to require a Help Topic before a Ticket can be closed.
+
+By default, this setting is NOT enabled.
+
+To enable this setting, go to:
+
+Admin Panel | Settings | Tickets | Require Help Topic to Close
+
+Require Help Topic
+If enabled, Tickets without a Help Topic will have a warning banner across the bottom of the page, a warning when trying to change the Ticket status to Closed, and a warning flag beside the Help Topic field when editing the Ticket.
+
+Ticket Without Help Topic:
+
+Ticket Without Help Topic
+Ticket Warning Banner:
+
+Ticket Warning Banner
+Status Warning Banner:
+
+Status Warning Banner
+Edit Warning:
+
+Edit Warning
+
+
+Task Revamp
+The Task Revamp improves upon the current functionality of tasks by adding the following:
+
+Task due date must be before ticket due date
+Add an Internal Note to the Ticket when a Task is completed
+Send an Alert to the Assigned Agent/Team when task is complete
+Task Due Date
+When creating a Task for a Ticket, we now ensure that the Task’s Due Date is before the Ticket’s Due Date
+
+Ticket Due Date:
+
+Ticket Due Date
+Task Due Date:
+
+Task Due Date
+Internal Note
+When a Task that is attached to a Ticket is closed, an Internal Note is attached to the Ticket.
+
+Closing a Task:
+
+Close Task
+Internal Note:
+
+Internal Note
+Email Alert
+Additionally, an Email Alert is sent to specified Agents if they are configured.
+
+Email Alert:
+
+Email Alert
+*Note: In order to get the email notification, a different Agent must be closing the Task.
+
+*Note: In order to get the email notification, the proper Alert must be configured.
+
+Since closing the Task creates an Internal Note on the Ticket, you must ensure that you have Alerts set up for Internal Notes.
+
+To check the configuration, go to:
+
+Admin Panel | Tickets | Alerts & Notices Tab
+
+Make sure the ‘New Internal Activity Alert’ is Enabled and the desired Agents are checked to receive the Alert.
+
+Email Alert Configuration
+
+
+Ticket Merge/Link
+This feature introduces 2 new capabilities in the system: merging and linking Tickets.
+
+
+The Ticket Merge feature allows you to combine two or more Tickets so that their threads will all be in one Ticket. We will call this the Parent Ticket.
+
+Linking allows you to group tickets together without actually manipulating any Tickets. It just gives you a quick way to access Tickets
+that may be related in some way.
+
+Merge and Link Role
+In order for an Agent to be able to merge or link Tickets, they must be assigned a Role that has permission to do so. In my examples, only the ‘All Access’ Role
+has permission to merge or link Tickets. This can be configured by doing the following:
+
+Go to:
+
+Admin Panel | Agents Tab | Roles | Choose a Role | Click the Merge/Link checkbox
+
+Merge Role
+Merging Tickets
+When Tickets are merged, all Ticket threads reside on one Parent Ticket. Any responses sent to a Child Ticket will automatically be routed to the Parent Ticket.
+If Child Tickets remain in the system, they will simply be there as a historical record of any fields that were populated on the Child Tickets.
+
+Merging Tickets
+On the Parent Ticket, merged Thread Entries have the merge icon on them, and hovering over the icon will show the Ticket Number of the Child Ticket.
+
+Merging Tickets
+Both Tickets have a thread event indicating that the Tickets were merged.
+
+There are 2 ways to merge Tickets:
+1. From within a Ticket
+2. From the Tickets queue
+
+Merging from within a Ticket
+The ‘Merge Tickets’ option can be found by going to the More dropdown.
+
+Merging from within a Ticket
+Once clicked, the Agent will see the Parent Ticket, which is the Ticket they are currently in, as well as the options available when merging Tickets.
+
+Merging from within a Ticket
+The first Ticket Number displayed in the list is the Parent Ticket. Moving a different Ticket to the top of the list will change the Parent to that Ticket.
+Once a Ticket has been made a Parent, other Tickets can be merged to the Parent, however, the Parent Ticket can NOT be merged to any additional Tickets.
+
+Merging from within a Ticket
+Merge Options
+There are several different options that can be chosen when merging Tickets. We will outline the following below:
+- Participants
+- Merge Type
+- Delete Child Ticket
+- Move Child Tasks to Parent
+
+Participants
+The Participants dropdown allows you to choose how participants of child Tickets will carry over to the Parent Ticket. By default, this is set to ‘User + Collaborators’.
+This means that participants of the child Ticket will be added as Collaborators to the Parent Ticket if they are not already participants of the Parent Ticket.
+If the ‘User’ option is chosen, the User of Child Tickets will be added as Collaborators to the Parent Ticket if they are not already the User or a Collaborator on the Parent Ticket.
+
+Merge Type
+There are 2 types of Merges:
+1. Combine Threads
+2. Separate Threads
+
+Combine Threads: Threads from all Tickets will be displayed chronologically.
+
+Merge Type
+Separate Threads: Threads from Tickets will be displayed one Ticket at a time.
+
+Merge Type
+Delete Child Ticket
+Checking this box will result in Child Tickets being deleted upon merging. Data from the Child Tickets is no longer in the system, so the Parent Ticket will not
+be displayed as a merge, but rather a regular Ticket. It will still have a thread event stating that another Ticket was merged into it, and each child thread entry
+will have the merge indicator icon beside it.
+
+Delete Child Ticket
+
+Delete Child Ticket
+
+Delete Child Ticket
+
+Delete Child Ticket
+*Note: If there were any Tasks on a Child Ticket where the ‘Delete Child Ticket’ option was checked, those tasks would be moved to the Parent Ticket.
+
+Ticket With Task Before Merging:
+
+Delete Child Ticket
+Ticket Without Task Before Merging:
+
+Delete Child Ticket
+Merge Tickets:
+
+Delete Child Ticket
+Move Child Tasks to Parent
+If you are merging Tickets without deleting the child Tickets, there is also an option to manually move child Tasks to the parent Ticket.
+
+Ticket With Task Before Merging:
+
+Move Child Tasks to Parent
+Ticket Without Task Before Merging:
+
+Move Child Tasks to Parent
+Merge Tickets:
+
+Move Child Tasks to Parent
+Parent Ticket After Merging:
+
+Move Child Tasks to Parent
+Child Ticket After Merging:
+
+Move Child Tasks to Parent
+Parent Ticket After Merging:
+
+Delete Child Ticket
+Adding Tickets to be Merged
+In order to merge in another Ticket, the Agent simply types the Ticket Number into the ‘Select Ticket’ box, select the desired Ticket, click Add a Ticket, and then Save Changes.
+
+Adding Tickets to be Merged
+
+Adding Tickets to be Merged
+Merging from the Tickets Queue
+*Note: The Merge button will be displayed as long as the Agent has the Merge Role permission for at least one Department they have access to; they can only
+merge tickets within the departments they have the Role permission to do so. If you do not have permission to merge Tickets from a Department, you will see the following error message.
+
+Adding Tickets to be Merged
+If an Agent has a Role with permissions to merge Tickets, they can do so from the Tickets queue for Tickets of that Department. This can be done by using the check
+boxes to select Tickets to merge and then clicking the ‘Merge’ button at the top right of the screen.
+
+Merging from the Tickets Queue
+
+Merging from the Tickets Queue
+Once selected, the Agent can drag the Ticket they would like to be the Parent Ticket to the top of the list and then Save Changes to merge the Tickets.
+
+Merging from the Tickets Queue
+
+Merging from the Tickets Queue
+*Note: For merges, Children Tickets do not show up in the main Ticket queue, however, Agents can still search for them. In this example, Ticket #265518 is the
+Parent Ticket and Ticket #516834 is the Child Ticket.
+
+Hovering over the merge icon will allow Agents to see the type of merge that was done.
+
+Ticket Permissions
+Ticket Permissions for merged Tickets are based upon an Agent’s access to the Parent Ticket’s Department. If Tickets with different Departments are being merged,
+the Parent Ticket will automatically be referred to the Child Ticket’s Department so that the Agent will have access to both the Parent and Child Ticket. To read
+more about Ticket Referrals, go here.
+
+Tickets in different Departments:
+
+Tickets in different Departments
+
+Tickets in different Departments
+Linking Tickets
+Linking Tickets is similar to merging Tickets, however, linking Tickets does not actually combine thread entries. Linking Tickets simply adds a link to related
+Tickets. The Tickets behave exactly as they did before with replies going to their respective Tickets. Linking can be done within a Ticket or from the Ticket queue.
+
+Linking from within a Ticket
+The ‘Link Tickets’ option can be found by going to the More dropdown.
+
+Linking from within a Ticket
+Once clicked, the Agent will see the Parent Ticket, which is the Ticket they are currently in, as well as the options available when linking Tickets.
+
+Linking from within a Ticket
+Notice that for linking Tickets, Agents only have the option to add Tickets since thread entries are not affected when linking Tickets. All Ticket data remains the same when linking.
+
+Linking from within a Ticket
+
+Linking from within a Ticket
+
+Linking from within a Ticket
+
+Linking from within a Ticket
+Linking from the Tickets Queue
+Linking from the Tickets queue is done the same was as merging from the Tickets queue. Simply select the Tickets to link and then click the Link icon.
+
+Linking from the Tickets Queue
+Remember, the Ticket on top will be the Parent Ticket. For this example, I want to use Test Ticket 3 as the Parent since it is already the Parent of Test Ticket 4.
+
+Linking from the Tickets Queue
+Now when I go back to the Parent Ticket, I can see all of its children listed in the Ticket.
+
+Linking from the Tickets Queue
+
+Linking from the Tickets Queue
+If I click the ‘Link Tickets’ option from this Parent Ticket, I am given the option to unlink Tickets as well as switch the Parent Ticket.
+
+Linking from the Tickets Queue
+Unlink Tickets
+To unlink a Ticket, simply click the garbage can icon beside the Tickets you want to unlink and save your changes.
+
+Unlink Tickets
+
+Unlink Tickets
+
+Unlink Tickets
+Switching Link Parents
+Since linking Tickets does not change anything about any Ticket involved, you may change which Ticket is the Parent. Within the Ticket, go to the ‘Link Tickets’ option.
+
+Switching Link Parents
+
+Switching Link Parents
+This shows you all of the linked Tickets. The Parent Ticket is on top of the list. To change the Parent, simply drag a different Ticket to the top of the list and Save Changes.
+
+Switching Link Parents
+Now, Test Ticket 6 is the Parent Ticket.
+
+Switching Link Parents
+Merged/Linked Ticket Indicators
+There are several ways to know if a Ticket has been merged or linked. There are optional configurations that can be set up on queues. Additionally, visiting a Ticket
+that is part of a merge or link will have indicators.
+
+Merged/Linked Tickets in the Queue
+An annotation can be added to a column in a queue to indicate that a Ticket has been merged or linked. To do this globally, go to:
+
+Admin Panel | Settings | Tickets | Queues | Select a Queue
+
+Merged/Linked Tickets in the Queue
+Next, go to the Columns tab and click the ‘Config’ button next to the column that should show the merged icon.
+
+Merged/Linked Tickets in the Queue
+Go to the ‘Annotations’ tab and select ‘Merged Icon’. Choose where you would like the icon to be visible. In my example, I will show the icon at the end of the
+Ticket Number column.
+
+Merged/Linked Tickets in the Queue
+Once the changes have been saved, the Merged/Linked Icon shows up, depending on which has been done for Tickets.
+
+Merged/Linked Tickets in the Queue
+You can also add a column to indicate if a Ticket has been merged or linked.
+
+Go to:
+Admin Panel | Settings | Tickets | Queues | Choose a Queue | Columns Tab
+
+Merged/Linked Tickets in the Queue
+
+Merged/Linked Tickets in the Queue
+
+Merged/Linked Tickets in the Queue
+Repeat the same steps for the Linked column.
+
+Merged/Linked Tickets in the Queue
+Once saved, the queue will show the new Merged and Linked columns.
+
+Merged/Linked Tickets in the Queue
+Viewing Merged Tickets
+Viewing Merged Tickets
+
+Viewing Merged Tickets
+Both Parent and Child Tickets have a ‘Related Tickets’ tab to help easily navigate between the related tickets.
+
+Viewing Merged Tickets
+Hovering over the Ticket Number will show a preview of the related Ticket.
+
+Merged/Linked Tickets in the Queue
+Merged thread entries have the merged symbol in the top right corner that displays the Child Ticket # when hovered over.
+
+Merged/Linked Tickets in the Queue
+Searching for Merged Tickets
+As mentioned earlier, Child Tickets for merges are not displayed in the Ticket queue, however, they do appear in search results. You can easily do a search for all
+Merged Tickets by searching where Merged is checked:
+
+Searching for Merged Tickets
+
+Searching for Merged Tickets
+Searching for Linked Tickets
+Linked Tickets can also be easily found by searching for where Linked is checked.
+
+Searching for Linked Tickets
+
+Searching for Linked Tickets
+Merge/Link Icon Information
+When choosing Tickets to merge/link, the Ticket rows contain helpful information about the Tickets chosen. The columns shown from left to right include:
+- Ticket Number
+- Ticket User
+- Subject
+- Thread Entry Count
+- Task Count
+- Merge Preview
+- Link Preview
+- Collaborator Preview
+
+Searching for Linked Tickets
+*Note: If a Ticket does not have some of the data listed, for example, tasks, a space is left where that icon would be.
+
+Each blue item in the row shows additional information when hovered over.
+
+
+
+
+Attachments in S3
+The Attachments in S3 plugin allows you to store attachments in Amazon S3 instead of the database. This can be a good option to use for helpdesks that have a heavy load of attachments that are taking up a lot of storage in the database.
+
+First, you must download the plugin from our website. Please make sure you select the appropriate version of osTicket before proceeding to the plugin selection. Once downloaded, upload the plugin to your server and place it in the include/plugins/ folder. Make sure the plugin has appropriate file permissions and ownership so the webserver can read and execute.
+
+Now you can install the plugin by logging into your helpdesk and navigating to Admin Panel > Manage > Plugins. Click Add New Plugin and click Install next to the desired plugin.
+
+Add New Plugin
+
+
+Install Plugin
+To enable the plugin click on the name of the plugin in the list of installed plugins, set Status to Active, and Save Changes.
+
+Enable Plugin
+Once the plugin has been installed and enabled, it can be configured by going to:
+
+Admin Panel | Manage | Plugins | Attachments hosted in Amazon S3 | Instances
+
+All Plugins
+
+
+Attachments in S3 Instances
+To add a new instance simply click Add New Instance. Give the new instance any Name you want, set the Status to Active, and click the Config tab to start configuring the instance.
+
+Add New Attachments in S3 Instance
+
+
+Attachments in S3 Configuration
+Within the configuration, you will need to provide the S3 Bucket to store files in.
+
+The S3 Folder Path is an optional field that allows you to specify a folder or folder path within the bucket to store files in.
+
+Note: If the folder or folder path provided does not already exist in S3, it will be created automatically.
+
+The AWS Region of your bucket can be found in S3 by going to the Bucket and clicking the Properties tab.
+
+AWS Region
+Default ACL for Attachments refers to the permissions you want for the files stored in S3. If you aren’t sure which option to choose, you can default to the properties already configured for the Bucket.
+
+For the Access Information section, you need to specify IAM user credentials for a user that is set up with access to S3.
+
+Once you have successfully configured the plugin, you will be able to have the helpdesk store attachments in the S3 by going to:
+
+Admin Panel | Settings | System | Store Attachments
+
+Change the ‘Store Attachments’ option to ‘S3’
+
+Store Attachments Setting
+Now, when an Attachment is added in the helpdesk, it will be saved in S3.
+
+Open Ticket With Attachment
+
+
+Ticket With Attachment
+If you have access to the database, you’ll notice that attachments stored in S3 can be found in the ost_file table, where ost_ is your table prefix. If the attachment is successfully stored in S3, there will be a 3 in the bk column. Files stored in the database have a D in the bk column.
+
+Attachment in Database
+If you have access to the server where the osTicket files are stored, you can see the available backends that can be used by running the following:
+
+php manage.php file backends
+
+Show Backends
+You can migrate the files from the database to S3 by running the following command in the terminal:
+
+php manage.php file migrate --backend D --to 3
+
+Where backend refers to the bk column in the database, D stands for the current backend being used, Database in this case, and 3 stands for the backend you want to switch to which is S3 in this example.
+
+Command in Terminal
+Once the command has been executed, you can look back in the database and you will notice the the bk field now shows 3 for all of the attachments since they have been migrated.
+
+Command in Terminal
+
+
+Help Desk Audit
+The Audit Log plugin allows Administrators to keep track of what Agents and Users are doing in the helpdesk.
+This plugin has many capabilities that will be covered below.
+
+
+Plugin Setup
+First, you must download the plugin from our website. Please make sure you select the appropriate version of osTicket before proceeding to the plugin selection. Once downloaded, upload the plugin to your server and place it in the include/plugins/ folder. Make sure the plugin has appropriate file permissions and ownership so the webserver can read and execute.
+
+Add New Plugin
+Now you can install the plugin by logging into your helpdesk and navigating to Admin Panel > Manage > Plugins. Click Add New Plugin and click Install next to the desired plugin.
+
+Add New Plugin
+
+
+Install Plugin
+Enable Plugin
+To enable the plugin click on the name of the plugin in the list of installed plugins, set Status to Active, and Save Changes.
+
+Enable Plugin
+Configure Plugin
+Once the plugin has been installed and enabled, it can be configured by going to:
+
+Admin Panel | Manage | Plugins | Help Desk Audit | Instances
+
+All Plugins
+
+
+Help Desk Audit Instances
+To add a new instance simply click Add New Instance. Give the new instance any Name you want, set the Status to Active, and click the Config tab to start configuring the instance.
+
+Add New Help Desk Audit Instance
+
+
+Help Desk Audit Configuration
+Show View Audits determines if the system will show the audit logs for Tickets being viewed. By default, the logs for viewing Tickets will be displayed.
+
+Viewing Audits
+Audits can be seen from several different places in the system. Each Audit report can be exported as a CSV.
+Below are the following types of Audit reports:
+
+User Audits
+Agent Audits
+Ticket Audits
+Dashboard Audits
+User Audits
+User audits can be accessed by going to the User Directory, selecting a User, and then going to the Audits tab. From here, Agents can see every action
+a User has performed on the Tickets they have access to.
+
+User Audits
+Agent Audits
+Agent audits can be accessed by going to the Admin Panel, Agents tab, selecting an Agent, and then going to the Audits tab. From here, Agents can see every action an
+Agent has performed in the system. This includes Ticket activities as well as backend activities.
+
+Agent Audits
+Ticket Audits
+Each Ticket has its own Audit log to show any action done on it such as changing status, transfers, referrals, field edits, etc. The Ticket Audit can be seen by going to a Ticket,
+clicking the More dropdown, and selecting ‘View Audit Log’.
+
+Ticket Audits
+
+Ticket Audits2
+Dashboard Audits
+In the Dashboard Audit, Agents have more options for how to drill down the report. Agents have the option to put a date range for the report, choose which type of object to view,
+and choose a specific type of event they may want to see in the report. The Dashboard Audit is accessed by going to the Admin Panel, Dashboard tab, and then Audit Logs.
+
+Edited Tickets:
+
+Edited Tickets
+All Department Events:
+
+Department Events
+Tickets Created Within a Date Range:
+
+Date Range
+
+
+
+Two Factor Authentication
+The Two Factor Authentication plugin allows allows Agents to use an Authenticator application of their choice on their mobile device for 2FA.
+
+
+If configured, the Agent must scan a QR code from the app, and when they log into the helpdesk, they will be prompted to enter a 6-digit code displayed in the app to finish logging in.
+
+This plugin requires downloading an Authenticator app on your mobile device. There are many different Authenticator apps to choose from for both Apple and Android devices. As long as the app has the ability to use the device’s camera to scan a QR code, it should work. Popular options include:
+
+Google Authenticator:
+Apple
+Android
+
+Microsoft Authenticator:
+Apple
+Android
+
+Once the app has been installed on your mobile device, you will need to install and enable the plugin in osTicket.
+
+First, you must download the plugin from our website. Please make sure you select the appropriate version of osTicket before proceeding to the plugin selection. Once downloaded, upload the plugin to your server and place it in the include/plugins/ folder. Make sure the plugin has appropriate file permissions and ownership so the webserver can read and execute.
+
+Now you can install the plugin by logging into your helpdesk and navigating to Admin Panel > Manage > Plugins. Click Add New Plugin and click Install next to the desired plugin.
+
+Add New Plugin
+
+
+Install Plugin
+To enable the plugin click on the name of the plugin in the list of installed plugins, set Status to Active, and Save Changes.
+
+Enable Plugin
+Once the plugin has been installed and enabled, it can be configured by going to:
+
+Admin Panel | Manage | Plugins | Two Factor Authenticator | Instances
+
+All Plugins
+
+
+Two Factor Authentication Instances
+To add a new instance simply click Add New Instance. Give the new instance any Name you want, set the Status to Active, and click the Config tab to start configuring the instance.
+
+Add New Two Factor Authenticator Instance
+
+
+Two Factor Authenticator Configuration
+Once the plugin is enabled, Agents can configure Authenticator as their Default 2FA method by going to their profile.
+
+Authenticator will be greyed out in the list until it has been configured.
+
+User Profile
+
+
+User Profile
+
+
+2FA Options
+
+
+2FA QR Code
+Once you see the QR code, you will need to scan the code using an Authenticator app on your mobile device.
+
+Add QR Code
+Click ‘Scan barcode’.
+
+Scan QR Code
+Once you have scanned the barcode, you will see an entry on the app for osTicket.
+
+2FA QR Code
+
+
+QR Code Next
+Enter the code displayed in the app and verify that it is correct.
+
+QR Code Next
+
+
+Setup Complete
+Once the configuration is complete, you can choose Authenticator as your Default 2FA method.
+
+Choose 2FA
+The next time you log into the helpdesk, you will be prompted to enter the code shown in your Authenticator app to finish logging into the helpdesk.
+
+Help Desk Login
+
+
+2FA Code
+
+
+Enter 2FA Code
+
+
+
+Password Management Policies
+The Password Management Policies plugin allows helpdesk Administrators to enforce custom password requirements for Agents and Users in the helpdesk.
+
+
+First, you must download the plugin from our website. Please make sure you select the appropriate version of osTicket before proceeding to the plugin selection. Once downloaded, upload the plugin to your server and place it in the include/plugins/ folder. Make sure the plugin has appropriate file permissions and ownership so the webserver can read and execute.
+
+Now you can install the plugin by logging into your helpdesk and navigating to Admin Panel > Manage > Plugins. Click Add New Plugin and click Install next to the desired plugin.
+
+Add New Plugin
+
+
+Install Plugin
+To enable the plugin click on the name of the plugin in the list of installed plugins, set Status to Active, and Save Changes.
+
+Enable Plugin
+Once the plugin has been installed and enabled, it can be configured by going to:
+
+Admin Panel | Manage | Plugins | Password Management Policies | Instances
+
+All Plugins
+
+
+Password Management Policies Instances
+To add a new instance simply click Add New Instance. Give the new instance any Name you want, set the Status to Active, and click the Config tab to start configuring the instance.
+
+Add New Password Management Policies Instance
+
+
+Password Management Policies Configuration
+The following configurations can be set for passwords:
+
+Minimum length
+Character classes required
+Password strength
+Enforce on login
+Password reuse
+Password expiration
+Minimum length
+Passwords must have at least the amount of characters specified here.
+
+Character classes required
+The different classes referenced here are uppercase characters, lowercase characters, numbers, and special characters (Ex: @,#,$,>,etc.).
+Depending on the option you choose here, (2, 3, or 4), passwords must contain characters in at least that many classes.
+
+Character Class Options
+Password with two classes:
+Password
+
+Password with three classes:
+Passw0rd
+
+Password with four classes:
+Pa$$w0rd
+
+Password strength
+Password Strength Options
+For password strength, you can choose to accept any strength, or you can choose to specify that passwords must have a strength that is at least weak, good, strong, or awesome.
+The strength of a password depends on characters used, the case of characters used i.e. uppercase or lowercase, and the length of the password.
+The easiest way to increase password strength is to use different classes for the characters in a passsword. The less classes used, the more the length of the password would need to be
+to meet the strength requirement. You can read more about password strength here.
+
+Enforce on login
+If you choose to enforce the password policy on login, Agents and Users will be prompted to update their password to meet the requirements of the policy before using the helpdesk.
+
+Enforce on Login
+Password reuse
+By default, the password policy plugin is configured to force Agents/Users to create new passwords when resetting them, however, an Administrator can check this box to allow the same password to be used multiple times.
+
+Password expiration
+Password Expiration Options
+This gives Administrators the option to choose how often Agents/Users should be required to change their password. By default, this option is set to where passwords never expire.
+
+Setting the Password Policy
+Once the password policy has been configured, the Administrator can choose the policy for Agents and/or Users.
+
+To use the password policy for Agents, go to:
+Admin Panel | Settings | Agents | Password Policy | Password Management Plugin
+
+Agent Password Policy
+To use the password policy for Users, go to:
+Admin Panel | Settings | Users | Password Policy | Password Management Plugin
+
+User Password Policy
+Note: ‘Default Basic Policy’ refers to the legacy policy that was put in place prior to the current version of osTicket. The previous policy allowed Administrators to set the
+password expiration for Agents. If none was set up previously, passwords in the current help desk will never expire.
+
+
+
+
+Attachments on the Filesystem
+The Attachments on the Filesystem plugin allows you to store attachments in a folder on the filesystem instead of the database. This can be a good option to use for helpdesks that have a heavy load of attachments that are taking up a lot of storage in the database.
+
+
+First, you must download the plugin from our website. Please make sure you select the appropriate version of osTicket before proceeding to the plugin selection. Once downloaded, upload the plugin to your server and place it in the include/plugins/ folder. Make sure the plugin has appropriate file permissions and ownership so the webserver can read and execute.
+
+Now you can install the plugin by logging into your helpdesk and navigating to Admin Panel > Manage > Plugins. Click Add New Plugin and click Install next to the desired plugin.
+
+Add New Plugin
+
+
+Install Plugin
+To enable the plugin click on the name of the plugin in the list of installed plugins, set Status to Active, and Save Changes.
+
+Enable Plugin
+Once the plugin has been installed and enabled, it can be configured by going to:
+
+Admin Panel | Manage | Plugins | Attachments on the filesystem | Instances
+
+All Plugins
+
+
+Attachments on the filesystem Instances
+To add a new instance simply click Add New Instance. Give the new instance any Name you want, set the Status to Active, and click the Config tab to start configuring the instance.
+
+Add New Attachments on the filesystem Instance
+
+
+Attachments on the filesystem Configuration
+You will need to provide a folder where the attachments can be stored. You will also need to ensure that the folder can be written to.
+
+Note: If the path does not start with ‘/’ or a drive letter, it will be assumed to reside in the root folder of your osTicket files.
+
+Filesystem Folder
+Once you have successfully configured the plugin, you will be able to have the helpdesk store attachments in the filesystem by going to:
+
+Admin Panel | Settings | System | Store Attachments
+
+Change the ‘Store Attachments’ option to ‘Filesystem’
+
+Store Attachments Setting
+
+
+Save Settings
+Now, when an Attachment is added in the helpdesk, it will be saved in the ‘ostAttachments’ folder.
+
+Open Ticket With Attachment
+
+
+Ticket With Attachment
+
+
+Attachment in Folder
+If you have access to the database, you’ll also notice that attachments stored in the filesystem can be found in the ost_file table, where ost_ is your table prefix. If the attachment is successfully stored in the filesystem, there will be an F in the bk column. Files stored in the database have a D in the bk column.
+
+Attachment in Database
+If you have access to the server where the osTicket files are stored, you can see the available backends that can be used by running the following:
+
+php manage.php file backends
+
+Show Backends
+You can migrate the files from the database to the filesystem by running the following command in the terminal:
+
+php manage.php file migrate --backend D --to F
+
+Where backend refers to the bk column in the database, D stands for the current backend being used, Database in this case, and F stands for the backend you want to switch to which is Filesystem in this example.
+
+Command in Terminal
+Once the command has been run, you can look back in the database and you will notice the the bk field now shows F for all of the attachments since they have been migrated.
+
+Command in Terminal
+The attachment folder specified will also be populated with the newly migrated files.
+
+Command in Terminal
+
+
+
+Installation
+osTicket comes with its own web-based installer to help guide you through the installation process without the frustration. While the installer provides step by step guide during the installation process, it’s important and helpful to have general knowledge about Web servers, PHP and MySQL.
+
+Prerequisites
+To install osTicket, your server must have Apache/LiteSpeed/IIS webserver (with the URL Rewrite module installed/enabled), PHP 8.1 - 8.2 (8.2 recommended), and MySQL 5.0 (or better) installed. If you are unsure whether your server meets these requirements, please check with your host or webmaster before proceeding with the installation.
+
+You will need one MySQL database with valid user, password and hostname handy during installation. MySQL user must have FULL privileges on the database. If you are unsure whether you have these details or if the user has sufficient permissions, please consult your host or database admin before proceeding.
+
+WINDOWS RECOMMENDED LINKS
+
+PHP 8.2/8.1 for Windows Server: Download
+MySQL 8.0 for Windows Server: Download
+MariaDB 10.11 for Windows Server: Download
+PHP Manager 2 for IIS (makes managing PHP on IIS much easier): Download
+Getting Started
+At this point you should have downloaded latest version of osTicket. Uncompress the files and upload files and directories in upload folder to a directory of your choice on your server. For example /osticket/, /helpdesk/ or /support/ depending on your preference. Basic knowledge of using FTP is a plus at this stage. If you don’t know how to use FTP, we would recommend you read the documentation supplied with your FTP client and learn the basics of uploading and setting permissions on files.
+
+osTicket installer needs to be able to write and modify ost-config.php found in the include directory. Please follow the instructions given by the installer.
+
+Using Installation Script
+Once all of the above steps are complete, you can complete the installation and basic setup in a web browser. You can invoke the installer by simply browsing the osTicket URL e.g http://www.yourdomain.com/support. Alternatively you can enter the URL to it into your browser address bar e.g http://www.yourdomain.com/support/setup/.
+
+osTicket’s installation script will attempt to auto-detect paths and any permission issues. Please follow the instructions to finish up the installation process.
+
+If the script spots any configuration errors then it will not allow you to continue until the errors are corrected.
+If everything checks out, you will be presented with a form to fill in the required information.
+If any errors occurs, go back and check the data entered.
+On valid data the script will create and populate the database plus write a configuration file.
+Note that the installer performs basic configuration required to get osTicket up and running. Further configuration is required, post-install, to make the system fully functional.
+
+Installing osTicket Using Fantastico In CPanel
+osTicket can also be installed on CPanel based web hosting accounts using Fantastico.From your CPanel, click on Fantastico and follow the instructions to install osTicket.
+
+IMPORTANT:
+
+The Fantastico default installation package (as of 9 Jan 2010) installs osTicket with the default email address of support@system.com. If you install using Fantastico, you MUST immediately change your default email addresses in the main System Preferences and in your Department settings.
+The Fantastico package for osTicket may not be as up to date as the latest release available on osTicket.com. Please check the osTicket.com website for the most up to date version.
+Finishing Up
+If the setup script has finished running with no errors, then congratulations osTicket is now installed. You can now log in with the username and password you created during the install process. After verifying that the installation completed correctly - your next step should be to fully configure your new support ticket system for use. But before you get to it please take a second to cleanup.
+
+Change permission of include/ost-config.php to remove write access
+Delete setup directory
+Enable the system
+Once you have done the above, you can proceed with the next step, Post-Install Setup.
+
+HAVING TROUBLE
+
+We can help install and configure osTicket to your needs. Please learn more about our professional installation services.
+
+Self-Help Troubleshooting
+If you can not find any solutions to the problem you are having, you can enable the “Show Errors” flags located in /bootstrap.php (or /main.inc.php in older versions):
+
+# Don't Display Errors
+ini_set('display_errors',0);
+ini_set('display_startup_errors',0);
+Change this to:
+
+ini_set('display_errors',1);
+ini_set('display_startup_errors',1);
+Then errors should be displayed either in your web browser or in your server’s error.log file.
+
+Moreover, don’t forget to check your osTicket Dashboard page and your mail server log.
+
+
