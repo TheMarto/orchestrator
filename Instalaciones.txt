@@ -47,3 +47,63 @@ rm -rf node_modules package-lock.json
 npm install
 # Forzar rebuild de módulos nativos
 npm rebuild
+
+
+
+
+######## V1 Funciona #######
+Indexar -- Clear
+curl -X DELETE "http://localhost:3000/documents/clear"
+
+debe estar en ls -la docs/test.txt
+Indexamos:
+curl -X POST "http://localhost:3000/documents/index-file" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "filePath": "docs/test.txt",
+    "source": "large_document"
+  }'
+
+Recisamos:
+curl "http://localhost:3000/documents/stats"
+
+recordar donde debe estar:
+tu-proyecto/
+├── src/
+├── docs/
+│   └── test.txt
+└── package.json
+
+
+Si falla con ruta absoluta:
+curl -X POST "http://localhost:3000/documents/index-file" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "filePath": "/ruta/completa/a/tu/proyecto/docs/test.txt",
+    "source": "large_document"
+  }'
+
+
+
+  por carpeta completa:
+  curl -X POST "http://localhost:3000/documents/index-directory" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "directoryPath": "docs",
+    "source": "documentation"
+  }'
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
