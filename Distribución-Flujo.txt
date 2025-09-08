@@ -1,0 +1,106 @@
+Ventajas de esta distribución:
+Load balancing natural:
+
+Server 1 maneja inference pesado
+Server 2 maneja datos y embeddings
+Ambas GPUs trabajando en paralelo
+
+Redundancia:
+
+Si un server falla, el otro puede tomar carga básica
+Datos separados del procesamiento
+
+Flujo optimizado:
+
+Query llega → NestJS (Server 1)
+Genera embeddings → Ollama Embeddings (Server 2)
+Busca vectores → Qdrant (Server 2)
+Consulta BBDD → PostgreSQL (Server 2)
+Inference final → Ollama Principal (Server 1)
+Respuesta → Usuario
+
+Configuración de red:
+Load balancer simple con nginx o HAProxy en uno de los servers para distribuir requests.
+Modelos recomendados por GPU:
+P2000 (5GB) aguanta cómodamente:
+
+Llama 3.1 7B (4GB VRAM)
+Mistral 7B (4GB VRAM)
+Phi-3 Medium (4GB VRAM)
+
+Para embeddings:
+
+nomic-embed-text (muy eficiente en GPU)
+all-MiniLM en CPU del Server 2
+
+
+Distribución
+
+Server 1 (i5 + 32GB + P2000) - "Procesamiento"
+VM 1: Ollama Principal (GPU dedicada)
+  - Modelo principal (Llama 3.1 8B o 7B)
+  - 16GB RAM asignada
+  - GPU P2000 pasthrough
+
+CT 1: NestJS Backend + Embeddings
+  - Sentence Transformers (all-MiniLM)
+  - Procesamiento de documentos
+  - Orquestación RAG
+  - 8GB RAM
+Server 2 (i7 6700 + 16GB + P2000) - "Datos"
+VM 1: Ollama Secundario (para embeddings locales)
+  - Modelo de embeddings (nomic-embed-text)
+  - 8GB RAM asignada
+  - GPU P2000 para embeddings rápidos
+
+CT 1: Qdrant Vector Database
+  - Base de datos vectorial
+  - 4GB RAM
+
+CT 2: PostgreSQL 
+  - Tu BBDD actual
+  - 4GB RAM
+
+
+  NEST:
+  src/
+  controllers/
+    chat.controller.ts                 // existe (usa RagService hoy)
+    documents.controller.ts            // existe (indexa docs a Qdrant)
+    db.controller.ts                   // NUEVO: gestionar conexiones + salud + catálogo
+  dto/
+    chat.dto.ts                        // existe
+    document.dto.ts                    // existe
+    db-config.dto.ts                   // NUEVO: datos conexión BBDD
+    hybrid-query.dto.ts                // NUEVO: entrada para consultas híbridas
+  interfaces/
+    types.ts                           // existe
+    db.types.ts                        // NUEVO: contratos DB y catálogo semántico
+    hybrid.types.ts                    // NUEVO: contratos planner/fusión
+  services/
+    embedding/embedding.service.ts     // existe (dim 384 ahora)
+    vector/vector.service.ts           // existe (Qdrant)
+    document/document.service.ts       // existe (chunk + embeddings + index)
+    rag/rag.service.ts                 // existe (lo adaptamos a delegar cuando toque)
+    connectors/                        // NUEVO: conectores por motor
+      database-connection.service.ts   // orquesta conectores
+      mysql.connector.ts
+      postgres.connector.ts
+      sqlite.connector.ts
+      mongo.connector.ts
+    catalog/                           // NUEVO: catálogo semántico
+      introspector.service.ts
+      schema-registry.service.ts
+      datacard.service.ts
+    nlp/
+      entity-extractor.service.ts      // NUEVO: extrae entidades (sku, email, ticket #…)
+    planner/
+      query-planner.service.ts         // NUEVO: decide Condicional/Paralela/Secuencial
+      result-fusion.service.ts         // NUEVO: mezcla DB+RAG con reglas
+    hybrid/
+      hybrid-rag.service.ts            // NUEVO: orquesta todo lo anterior
+  utils/
+    chunking.util.ts                   // existe
+    ollama.util.ts                     // existe
+  modules/ (opcional si prefieres modularizar por Nest)
+

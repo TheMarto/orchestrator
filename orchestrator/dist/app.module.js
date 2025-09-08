@@ -17,17 +17,20 @@ const documents_controller_1 = require("./controllers/documents/documents.contro
 const chat_controller_1 = require("./controllers/chat/chat.controller");
 const rag_service_1 = require("./services/rag/rag.service");
 const ollama_proxy_controller_1 = require("./controllers/ollama-proxy/ollama-proxy.controller");
+const database_module_1 = require("./module/database.module");
+const db_controller_1 = require("./controllers/db/db.controller");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
 exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
-        imports: [],
+        imports: [database_module_1.DatabaseModule],
         controllers: [
             app_controller_1.AppController,
             documents_controller_1.DocumentsController,
             chat_controller_1.ChatController,
-            ollama_proxy_controller_1.OllamaProxyController
+            ollama_proxy_controller_1.OllamaProxyController,
+            db_controller_1.DbController
         ],
         providers: [
             app_service_1.AppService,

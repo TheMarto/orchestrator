@@ -1,0 +1,287 @@
+1) Dónde estamos (base actual)
+
+Tu backend ya separa bien responsabilidades: EmbeddingService (embeddings locales), VectorService (Qdrant), DocumentService (lectura/chunking), RAGService (orquestación), y los controllers DocumentsController y ChatController. Esto es una base sólida para enchufarle fuentes nuevas como BBDD.
+
+2) Objetivo
+
+Añadir conectividad genérica a BBDD (MySQL hoy, otras mañana) y un RAG híbrido que combine:
+
+DB exacta/estructurada (usuarios, grupos, tickets…),
+
+Docs semánticos (manuales, procedimientos, FAQs ya indexadas en Qdrant),
+
+Un orquestador que elija Condicional / Paralela / Secuencial según la intención del usuario.
+
+3) Módulos y servicios (nombres y roles, sin código)
+
+Módulos nuevos:
+
+DataConnectorsModule → conecta a motores (MySQL, Postgres, SQLite, Mongo).
+
+DatabaseModule → lógica de dominio para OSTicket (queries y mapeos).
+
+HybridRetrievalModule → orquestación híbrida (planner, extractor, fusión).
+
+ObservabilityModule → métricas/trazas/health.
+
+Servicios clave:
+
+DatabaseConnectionService (genérico): registra/gestiona conexiones; expone interfaz común IDBConnector (connect, query, health).
+
+Implementaciones: MySQLConnector, PostgresConnector, SQLiteConnector, MongoConnector.
+
+SchemaRegistryService: conoce el esquema y semántica del dominio (OSTicket: tablas user, ticket, team, group, relaciones). Sirve tanto para prompts como para validar consultas.
+
+EntityExtractorService: detecta entidades/patrones (ticket #\d+, emails, nombres propios, grupos, organizaciones).
+
+QueryPlannerService: decide la estrategia (condicional/paralela/secuencial) y qué fuentes consultar y en qué orden.
+
+HybridRagService: ejecuta la estrategia, consolida resultados de DB y RAG, y devuelve una respuesta unificada (con trazabilidad).
+
+ResultFusionService: normaliza y rankea señales (match exacto de DB vs. similitud RAG, etc.).
+
+(Ajuste recomendado) VectorService.ensureCollection(): detecta dimensión del embedding activo y asegura/crea la colección en Qdrant con ese tamaño (evita futuros “expected X, got Y”).
+
+Controllers (sin romper lo actual):
+
+ChatController: sigue siendo la entrada; cambia a usar HybridRagService por debajo.
+
+DocumentsController: igual (indexación y stats).
+
+DbController (nuevo, opcional): endpoints para registrar conexiones, probar health, y ver esquemas.
+
+4) Estrategia de orquestación (¿Condicional/Paralela/Secuencial… se usan todas?)
+
+Mi propuesta es un planner adaptativo, no “siempre las tres”:
+
+A. Condicional (ruta rápida y barata)
+
+Si EntityExtractor ve patrones de alta precisión (ej. ticket #123, email, ID claro), DB primero con query exacta.
+
+Si hay respuesta suficiente (p.ej., “estado del ticket #123”), devolvemos directo o enriquecemos con RAG si cabe (p.ej., política de colores del portal).
+
+B. Paralela (default generalista)
+
+Si la intención es ambigua o exploratory (“problemas de notificaciones de tickets”), lanzamos DB (búsqueda amplia: últimos tickets del usuario/equipo) y RAG (chunks relevantes) a la vez con latency budget (p.ej. 1200 ms). Fusionamos lo que llegue primero con suficiente confianza.
+
+C. Secuencial (refinamiento)
+
+Si lo recabado no es concluyente, encadenamos: resultado de una fuente guía la siguiente (ej.: DB encontró al “usuario Martín Pérez” → usamos ese contexto para refinar la búsqueda RAG sobre “cambiar color por usuario”; o al revés, RAG sugiere “configuración por rol” → DB trae los roles de Martín).
+
+En corto: Condicional cuando hay “clave” clara; Paralela por defecto; Secuencial como refinamiento. Esto da respuestas rápidas y precisas sin coste innecesario.
+
+5) Flujo de ejemplo con tu caso
+
+Consulta: “soy martin… ¿cómo cambio el color de tickets entrantes en el usuario martin?”
+
+EntityExtractor: detecta persona (“martin”) y tema (“color de tickets entrantes”).
+
+QueryPlanner:
+
+DB condicional: buscar user por nombre/email “martin” (si hay ambigüedad, pedir desambiguación mínima: organización o correo).
+
+RAG en paralelo: buscar en documentos instrucciones/políticas sobre “cambiar color / tickets entrantes / UI / etiquetas / prioridades”.
+
+ResultFusion:
+
+Si la DB identifica a 1 usuario con contexto (rol/grupo), eleva ese resultado.
+
+Añade pasos/procedimiento desde RAG (manual/FAQ).
+
+Respuesta:
+
+“Para el usuario Martín (ID X, grupo Y) los colores se configuran en Z. Pasos: …”
+
+Si la acción de cambio requiere escritura, hoy respondemos instrucciones (sólo lectura). En el futuro, un WritePolicyService podría orquestar acciones (con permisos).
+
+6) Interfaces y DTOs (nombres, sin código)
+
+IDBConnector: connect(config), query(statementOrDsl, params), health(), disconnect().
+
+DbConfigDTO: motor + host + credenciales + opciones (pooling/ssl).
+
+HybridQueryDTO: messages (como ahora en chat), hints (opcional), flags (onlyDb, onlyRag, both).
+
+HybridResult: array de ResultItem { source: 'db'|'rag', score, data, trace }.
+
+7) Registry y seguridad
+
+SchemaRegistryService guarda:
+
+Tablas/relaciones OSTicket y descripciones funcionales (para prompts y validación).
+
+Listas blancas de tablas/campos permitidos (evita SQL injection indirecto si algún día generas SQL).
+
+Conexiones solo‐lectura inicialmente; pooling activado; timeouts por query.
+
+PII: máscaras si el usuario final no tiene permiso.
+
+8) Observabilidad
+
+ObservabilityService expone métricas por fuente: latencia, timeouts, tasa de acierto.
+
+traceId por request para seguir decisiones del planner y resultados de cada fuente.
+
+9) Plan de acción (iterativo, sin código de momento)
+
+Definir interfaces IDBConnector y DatabaseConnectionService (registro/selección de motor).
+
+Implementar MySQLConnector (pool, health, query parametrizada).
+
+SchemaRegistryService con el esquema mínimo de OSTicket (users, tickets, groups, relaciones clave).
+
+EntityExtractorService (regex + heurísticas para tickets, emails, nombres, grupos).
+
+QueryPlannerService con reglas:
+
+Condicional: patrones exactos → DB primero.
+
+Paralela: default con budget.
+
+Secuencial: cuando ninguna supera umbral de confianza.
+
+ResultFusionService: reglas de mezcla (DB exacto > RAG alto > DB difuso ≈ RAG medio), con trazabilidad.
+
+HybridRagService: integra planner + llamadas a VectorService (búsqueda) y DatabaseService (consultas OSTicket).
+
+Modificar ChatController para delegar en HybridRagService (sin romper la API).
+
+Añadir DbController (opcional) para alta/health de conexiones y ver esquema.
+
+Endurecer VectorService con ensureCollection() basado en dimensión autodetectada del modelo activo (evita mismatches).
+
+Pruebas:
+
+“ticket #123” (condicional)
+
+“usuario martin email …” (DB exacto)
+
+“cambiar color de tickets entrantes” (paralela con docs)
+
+Caso ambiguo de nombres (secuencial con desambiguación ligera)
+
+10) Opinión crítica breve
+
+Tu base de servicios está bien aislada; no metas SQL ni lógica de motor dentro de RAGService. Mantén el DBConnector y el planner propios.
+
+Define desde ya presets de estrategia (p. ej. fastPrecise, broad, balanced) y flags para el front (el usuario podrá elegir).
+
+Auto-ensure de Qdrant por dimensión del embedding activo es esencial; ese fue tu dolor inicial y se evita para siempre con un “primer embedding de calibración”.
+
+
+
+PARTE DE LECTURA DE BBDD:
+1) Introspección automática (descubrir qué hay)
+
+SQL (MySQL/Postgres/SQLite): leer INFORMATION_SCHEMA (o PRAGMAs en SQLite) para sacar:
+
+Tablas, columnas, tipos, longitudes, nulos, índices.
+
+PK/FK y relaciones (cardinalidades aproximadas).
+
+Stats básicos (si el motor los expone): cardinalidad, selectividad.
+
+Mongo (u otros NoSQL):
+
+Sampling de N documentos por colección.
+
+Descubrir claves frecuentes, tipos por campo, rutas anidadas (a.b.c), arrays.
+
+Heurísticas de referencias (p. ej., campos *_id u ObjectId que “parecen” apuntar a otra colección).
+
+Perfilado de valores (ambos mundos):
+
+Top-K valores de columnas clave.
+
+Patrones (regex) para detectar email, teléfono, SKU, ticket #, códigos.
+
+Rangos (fechas mín/máx), % nulos, enumeraciones probables.
+
+Resultado: un mapa “factual” de estructuras y pistas sobre contenido real.
+
+2) Capa semántica (entender el significado)
+
+Con lo descubierto arriba, construimos un Semantic Catalog:
+
+Entidades: normalizamos nombres de tablas/colecciones a entidades negocio (“Usuario”, “Producto”, “Ticket”, “Cliente”, “Inventario”…), incluyendo sinónimos y variantes (“ofertas” ↔ “promociones/descuentos”).
+
+Atributos canónicos: mapeamos columnas/campos a conceptos conocidos (nombre, email, precio, descuento, estado, created_at, currency…), con scores de confianza (por nombre + tipo + muestras).
+
+Relaciones: grafo de PK/FK (SQL) o referencias inferidas (Mongo) con “rutas de join/lookup recomendadas”.
+
+Clasificación de PII y sensibilidad (para permisos/respuesta parcial).
+
+Reglas básicas detectadas: CHECK/constraints, no-nulos, unicidad, y pautas de negocio inferidas (p.ej., “precio depende de lista + cliente”).
+
+Este catálogo semántico es lo que permite que el sistema “entienda” que “precio del producto X para el cliente Y” implica products + price_lists + discounts/promotions y fechas de vigencia, aunque el cliente no te haya dado documentación.
+
+3) “Data Cards” autogeneradas (documentación viva para el RAG)
+
+Para cada entidad/tabla/colección generamos una ficha legible:
+
+Descripción inferida (en lenguaje natural) + sinónimos.
+
+Campos relevantes con significado estimado, ejemplos reales (muestreados y anonimizados si procede), y banderas PII.
+
+Relaciones recomendadas y consultas típicas (“obtén precio final de producto para cliente”; “listar tickets abiertos por usuario”).
+
+Limitaciones: campos con alta nulidad, valores ambiguos, etc.
+
+Estas Data Cards se indexan en Qdrant como parte del corpus del RAG (con metadatos source=db_catalog), así cuando el usuario pregunta:
+
+el planner sabe dónde ir a buscar en DB,
+
+y el RAG puede explicar cómo se calcula o cuál es el procedimiento (y enlazar la ficha).
+
+4) Mapeo NL → Consultas seguras (sin SQL libre)
+
+Para ser generalista pero robusto:
+
+Extractor de entidades (regex + heurísticas) detecta producto/cliente/fecha/tienda/email/“ticket #123”… y reutiliza contexto de sesión (si ya dijo “cliente ACME”, persistimos).
+
+Plantillas/DSL por dominio (no SQL crudo): definimos builders parametrizados por lista blanca de tablas/campos/rutas, con límites/timeout.
+
+SQL: plantillas JOIN/WHERE/ORDER preaprobadas.
+
+Mongo: pipelines $match/$lookup/$project predefinidos.
+
+El Query Planner elige estrategia:
+
+Condicional: si hay clave exacta (SKU, ticket #, email) → DB primero.
+
+Paralela: dudas/ambigüedad → DB amplia + RAG simultáneos (latency budget).
+
+Secuencial: si falta un dato crítico (p.ej., cliente), pregunta antes de ejecutar; o usa lo hallado en una fuente para refinar la otra.
+
+5) Fusión de resultados y trazabilidad
+
+Señales: exactitud DB (match exacto) > similitud RAG; se mezclan con reglas claras.
+
+Explicabilidad: “Usé pricing.products, pricing.promotions y la ficha Política de descuentos. Precio = 100 – 10% = 90 (vigente hasta 30/09).”
+
+Permisos: si un campo es sensible, se enmascara o se solicita autorización.
+
+6) Cero-config razonable vs. curación ligera
+
+Cero-config: con introspección + sampling ya tienes un catálogo útil para muchos casos (y funciona en bases desconocidas).
+
+Curación ligera (recomendada): un admin confirma 15–30 minutos los alias/entidades clave y prioriza rutas de join. Esto acelera mucho la precisión.
+
+7) ¿Cómo conecta esto con tu ejemplo de inventario en Mongo?
+
+El Introspector descubre products, price_lists, promotions, clients, y que promotions.active depende de fechas.
+
+El Catálogo semántico mapea “precio” y “oferta” a esos conjuntos y define que el cálculo final depende de cliente/lista/fecha.
+
+El Planner:
+
+Si ya conoce el cliente en sesión: va directo a DB (Condicional).
+
+Si no: pregunta “¿Precio de lista o para el cliente X?” (Secuencial).
+
+En paralelo, el RAG trae la política y excepciones para explicarlo (Paralela).
+
+La respuesta combina dato exacto + explicación (y fuentes).
+
+
+

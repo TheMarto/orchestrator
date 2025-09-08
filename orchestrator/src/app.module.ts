@@ -8,14 +8,17 @@ import { DocumentsController } from './controllers/documents/documents.controlle
 import { ChatController } from './controllers/chat/chat.controller';
 import { RagService } from './services/rag/rag.service';
 import { OllamaProxyController } from './controllers/ollama-proxy/ollama-proxy.controller';
+import { DatabaseModule } from './module/database.module';
+import { DbController } from './controllers/db/db.controller';
 
 @Module({
-  imports: [],
+  imports: [DatabaseModule],
   controllers: [
     AppController,
     DocumentsController,
     ChatController,
-    OllamaProxyController
+    OllamaProxyController,
+    DbController
   ],
   providers: [
     AppService,
