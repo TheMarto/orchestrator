@@ -1,0 +1,20 @@
+# Codificación de Colores (UI) para Pedidos
+
+## Estado → Color base
+- `PENDING` → **amarillo**
+- `PAID` → **azul**
+- `SHIPPED` → **verde**
+- `CANCELLED` → **gris**
+- `RETURNED` → **morado**
+- `BACKORDER` → **naranja**
+
+## Priorización (overlay)
+- `priority >= 9` (urgente): **rojo** dominante
+- `priority >= 5` (alto): **ámbar** (mezcla con color base)
+- `priority < 5`: color base
+
+## Reglas
+1. Si `URGENTE (>=9)`, siempre **rojo** (badge + borde animado).
+2. Si `ALTO (>=5)`, color base + **borde ámbar**.
+3. `BACKORDER` **naranja** siempre que no sea urgente (si urgente, gana rojo).
+

@@ -1,0 +1,44 @@
+# Política de Precios y Promociones — ElectroMart (v2)
+
+## Objetivo
+Definir cómo se calcula el **precio final** mostrado/cotizado a un cliente, combinando **listas de precios** y **promociones activas**.
+
+## Definiciones
+- **Lista de precios del cliente**: cada cliente puede tener asignada exactamente una. Si no tiene, se usa la **Default EUR**.
+- **Promoción**: regla con vigencia temporal `[starts_at, ends_at]`, `scope` (GLOBAL, PRODUCT, CATEGORY, CUSTOMER, GROUP), `discount_type` (PERCENT, FIXED), `discount_value`, `stacking` (sí/no), `priority` (entero, mayor = se evalúa antes).
+
+## Algoritmo (resumen)
+1. **Base**: tomar `base_price` desde la lista de precios asignada al cliente (o default).
+2. **Promos candidatas**: filtrar las **activas ahora** (`starts_at <= now <= ends_at`) y que el **cliente y producto** cumplan el `scope` (+ `promotion_rules`).
+3. **Precedencia y stacking**:
+   - Una promo con `stacking=false` **bloquea** otras de **menor prioridad**.
+   - Si varias son `stacking=true`, se **acumulan** (ver orden de aplicación).
+   - Recomendación de prioridades: `CUSTOMER(90) > PRODUCT(80) > GROUP(70) > CATEGORY(50) > GLOBAL(10)`.
+4. **Orden de aplicación**:
+   1) Aplicar **descuentos fijos (FIXED)** primero, sumando sus valores (no puede bajar de 0).
+   2) Aplicar **porcentuales (PERCENT)** después, multiplicativamente sobre el precio ya ajustado.
+   3) **Tope de descuento acumulado** recomendado: **40%** por política de riesgo.
+   4) Redondeo: **2 decimales**, half-up.
+5. **Moneda**: se opera en la moneda de la lista de precios del cliente. Si hubiera heterogeneidad, convertir antes (no aplica en el demo).
+6. **Auditoría**: conservar el detalle: lista aplicada, promos aplicadas, montos y precio final.
+
+## Ejemplos (hoy ~ Sept 2025)
+- Cliente **ACME** comprando **LAP-ULTRA-15**:
+  - Lista: **VIP EUR** → base `1349.10`.
+  - Promos activas: `ACME -12% (priority 90, stacking=false)`, `ULTRA-15 -100€ (80, stacking=true)`, `Back to School 3% (10, stacking=true)`, `Laptops -10% (50, stacking=false)`.
+  - **Precedencia**: entra primero **ACME -12% (no stacking)** → **bloquea** las de menor prioridad. Precio final = `1349.10 * (1 - 0.12) = 1187.21`.
+
+- Cliente **Globex (Retail Partner)** comprando **PHN-PRO-6**:
+  - Lista: **Retail EUR** → base `949.05`.
+  - Promos activas: `Retail Partner -7% (70, stacking=true)`, `PHN PRO 6 -8% (80, stacking=true)`, `Back to School 3% (10, stacking=true)`.
+  - Fijos: ninguno. Porcentaje acumulado: `1 - (1-0.08)*(1-0.07)*(1-0.03) ≈ 17.0%` (< 40% tope).
+  - Precio final ≈ `949.05 * (1-0.08) * (1-0.07) * (1-0.03) ≈ 787.71`.
+
+## Notas
+- Si el usuario no especifica cliente, usar **precio de lista default** y **promos GLOBAL/PRODUCT/CATEGORY** aplicables. Mejor pedir el **cliente** si es crítico.
+- Las promociones **expiradas o inactivas** no participan.
+
+
+
+
+

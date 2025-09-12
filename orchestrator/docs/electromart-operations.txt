@@ -1,0 +1,26 @@
+# Operativa de Inventario, Almacenes y Backorders
+
+## Almacenes
+- **Madrid Hub (Centro)**, **Barcelona Hub (Este)**, **Valencia Hub (Este)**.
+- El **stock total** de un SKU es la **suma** de `inventory.qty_available` en todos los almacenes.
+
+## Reglas de disponibilidad
+- **Disponible** si `qty_total > 0`.
+- **Backorder** si `qty_total = 0` pero hay **pedido aceptado**: se crea orden con estado `BACKORDER`.
+- **Reservas**: un pedido `PENDING/PAID` **no descuenta** hasta confirmación (simulación demo).
+
+## Reposición y alertas
+- **Umbral de reposición** recomendado:
+  - Portátiles / Teléfonos: 10 uds.
+  - Accesorios: 20 uds.
+  - Componentes de alto valor: 5 uds.
+- Trigger de alerta: cuando un SKU cae por debajo del umbral en un **almacén crítico** (Madrid Hub).
+
+## Estrategias de envío
+- **División de pedido**: si hay stock parcial entre almacenes, se parte por línea.
+- **Consolidación**: por defecto **NO** en urgentes (prioridad ≥ 9).
+
+## Tiempos
+- Preparación: 24–48h estándar; urgentes < 8h.
+- Transferencias entre almacenes: 48–72h.
+

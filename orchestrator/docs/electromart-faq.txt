@@ -1,0 +1,17 @@
+# FAQ Comercial y Operativa
+
+**P: ¿Por qué dos clientes ven precios distintos?**  
+R: Por su **lista de precios** asignada y posibles **promociones** por cliente/grupo.
+
+**P: ¿Se suman las promociones?**  
+R: Sólo si **stacking=true**. Si una promo con mayor **priority** tiene `stacking=false`, bloquea las demás de menor prioridad.
+
+**P: ¿Qué pasa si no especifico el cliente?**  
+R: Se usa la **Default EUR** + promos globales/categoría/producto. Mejor indicar el **cliente** para promos específicas.
+
+**P: ¿Cómo sé el stock total?**  
+R: Suma de `inventory` en todos los almacenes.
+
+**P: ¿Qué color es un pedido BACKORDER urgente?**  
+R: **Rojo** (urgente gana sobre backorder).
+
