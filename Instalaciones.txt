@@ -60,7 +60,7 @@ Indexamos:
 curl -X POST "http://localhost:3000/documents/index-file" \
   -H "Content-Type: application/json" \
   -d '{
-    "filePath": "docs/test.txt",
+    "filePath": "docs/electromart-faq.md",
     "source": "large_document"
   }'
 

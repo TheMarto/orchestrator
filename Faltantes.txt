@@ -1,0 +1,123 @@
+P0 — Bloqueantes (hácelos primero)
+
+HybridRagService (planner/orquestador)
+
+Decide ruta: DB, RAG, o DB+RAG.
+
+Si hay producto detectado → DB primero (calcula precio real).
+
+Si falta cliente → usa Default + (GLOBAL/CATEGORY/PRODUCT) y sugiere “dime el cliente para recalcular”.
+
+ProductResolver
+
+Del texto → {product_id, sku, name, confidence}.
+
+Reglas: SKU exacto, LIKE por nombre (“teclado” → ACC-KB-MECH), si >1 candidato → pedir desambiguar.
+
+CustomerResolver
+
+Del texto → cliente por email/nombre (exacto o LIKE).
+
+Si no hay cliente, sigue con Default (sin promos CUSTOMER/GROUP).
+
+PriceEngine
+
+Obtiene lista de precios del cliente (o Default).
+
+Lee base_price del producto.
+
+Pide a PromotionEvaluator las promos aplicables.
+
+Calcula final: FIXED→PERCENT, stacking, prioridad, tope 40%, redondeo.
+
+PromotionEvaluator
+
+Consulta promos activas ahora por scope: GLOBAL/PRODUCT/CATEGORY y, si hay cliente, también CUSTOMER/GROUP.
+
+Aplica prioridad y stacking (bloqueo si stacking=false y prioridad mayor).
+
+Wiring en el chat
+
+El controller que atiende al chat debe llamar a HybridRagService (no solo a ragService).
+
+Logs inequívocos: “ProductResolver hit”, “PriceEngine SQL…”, “Promos aplicadas…”.
+
+StockResolver (rápido y muy útil)
+
+Totales y por almacén (SUM(qty_available) con GROUP BY warehouse).
+
+Lo usarás enseguida para preguntas de stock.
+
+Resultado esperado tras P0:
+“precio de un teclado mecánico” devuelve 91.18 hoy sin cliente (Default + Global −3% + Accesorios −5€).
+“precio del teclado mecánico para ACME” ≈ 77.50 (VIP + Global −3% + VIP −5% + fijo −5€).
+
+P1 — Importantes (dan contexto y robustez)
+
+IntrospectorService (V1, MySQL)
+
+Lee INFORMATION_SCHEMA → tablas, columnas, PK/FK, índices.
+
+SchemaRegistryService
+
+Guarda/recupera el SemanticCatalog por alias.
+
+DataCardService (V2 light)
+
+Genera fichas Markdown por entidad (Productos, Clientes, Promos, Pedidos…).
+
+Indexa en Qdrant (source="db_catalog") → el RAG “entiende” la BD.
+
+AnswerFusion / SourceAttribution
+
+Funde números de DB + explicación RAG.
+
+Muestra “Fuentes: DB[…], Docs[…]”.
+
+VectorService.ensureCollection()
+
+En onModuleInit: crear/verificar documents_rag con dimension=384 (la del embedder).
+
+Evita “dimension mismatch” y 404 de colecciones.
+
+Extracción de entidades (ligera)
+
+Reglas/regex para SKU, emails y números.
+
+Ayuda a Product/CustomerResolver antes de hacer LIKE.
+
+Cache de lectura
+
+TTL corto para listas de precios, promos activas y catálogo.
+
+Ahora/zona horaria
+
+Fuente única de “now()” (UTC) para evaluar promos.
+
+Evita desfases.
+
+P2 — Mejora continua / expansión
+
+/db/query (solo debug)
+
+Endpoint protegido para lanzar SELECT de prueba con plantilla/whitelist.
+
+Observabilidad
+
+Métricas y trazas (latencias por componente, tasas de acierto/ambiguo, errores de red).
+
+Manejo de errores y reintentos
+
+Mensajes útiles si falla MySQL/Qdrant; backoff en reintentos críticos.
+
+Seguridad/PII
+
+En catálogo marca campos sensibles; no volcar PII en logs/respuestas.
+
+Conectores extra
+
+Postgres/SQLite/Mongo (mismo patrón que MySQL) + Introspector básico para PG.
+
+Frontend mínimo
+
+Input, selector de cliente, estrategia (auto/condicional/paralela), panel de fuentes y trazas.
